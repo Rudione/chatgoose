@@ -1,6 +1,6 @@
 # 🎮 Chatogus Extreme
 
-**Link:** [https://rudione.github.io/chatogoose](https://rudione.github.io/chatogoose)
+**Link:** [https://rudione.github.io/chatogoose](https://rudione.github.io/chatgoose)
 
 An interactive game for Twitch streamers — guess who wrote what in chat.
 
