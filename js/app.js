@@ -181,6 +181,42 @@ window.app = {
         this._collectingMessages = true;
         UI.switchScene('loading');
         UI.initChatScroll();
+        this._checkStreamLive(this._connectedChannel);
+    },
+
+    _checkStreamLive(channel) {
+        const badge = document.getElementById('live-badge');
+        const dot = document.getElementById('live-dot');
+        const text = document.getElementById('live-text');
+        if (!badge || !dot || !text) return;
+
+        // Reset to offline state
+        badge.style.background = 'rgba(255,80,80,0.1)';
+        badge.style.borderColor = 'rgba(255,80,80,0.3)';
+        dot.style.background = 'var(--c-red)';
+        dot.style.boxShadow = '0 0 8px var(--c-red)';
+        dot.style.animation = '';
+        text.style.color = 'var(--c-red)';
+        text.textContent = 'Offline';
+
+        // Try to check via Twitch stream status (no auth needed for public data)
+        fetch(`https://decapi.me/twitch/uptime/${encodeURIComponent(channel)}`)
+            .then(r => r.text())
+            .then(body => {
+                const isLive = body && !body.toLowerCase().includes('offline') && !body.toLowerCase().includes('is not live');
+                if (isLive) {
+                    badge.style.background = 'rgba(63,191,122,0.1)';
+                    badge.style.borderColor = 'rgba(63,191,122,0.3)';
+                    dot.style.background = 'var(--c-green)';
+                    dot.style.boxShadow = '0 0 8px var(--c-green)';
+                    dot.style.animation = 'glowPulse 1.5s ease-in-out infinite';
+                    text.style.color = 'var(--c-green)';
+                    text.textContent = 'Live';
+                }
+            })
+            .catch(() => {
+                // If fetch fails, keep Offline — no change needed
+            });
     },
 
     updateProgress() {
@@ -433,6 +469,7 @@ window.app = {
             EMOJI_CHAIN:   () => Modes.renderEmojiChain(target)
         };
         (renders[mode] || renders.CLASSIC)();
+        this._updateHintAvailability(mode);
         this.startPerTimer();
         this._saveSession();
     },
@@ -555,7 +592,20 @@ window.app = {
         this._defer(() => this.nextRound(), 2000);
     },
 
+    _updateHintAvailability(mode) {
+        // ½ hint only works in modes with standard correct/wrong answer buttons
+        const fiftyWorks = !['TWO_OF_FOUR', 'WHOSE_MSG', 'FIRST_WORD', 'GUESS_7TV', 'EMOJI_CHAIN', 'CENSORED'].includes(mode);
+        const btn50 = document.getElementById('hint-50');
+        if (btn50 && !btn50.classList.contains('used')) {
+            btn50.classList.toggle('hint-unavailable', !fiftyWorks);
+        }
+    },
+
     useHint(h) {
+        if (h === '5050') {
+            const btn = document.getElementById('hint-50');
+            if (btn && btn.classList.contains('hint-unavailable')) return;
+        }
         if (h === '5050' && this.state.hints.fifty) {
             const all = Array.from(document.querySelectorAll('.answer-btn:not(:disabled)'));
             const wrong = all.filter(b => b.dataset.correct !== 'true');

@@ -116,7 +116,7 @@
               <span data-i18n="limitQuestions">Лимит сообщений-вопросов</span>
               <div style="position:relative;display:inline-block;">
                 <button class="tooltip-btn" onclick="event.stopPropagation();document.getElementById('noq-tip').classList.toggle('show')">?</button>
-                <div id="noq-tip" class="tooltip-pop">Если включено: сообщения заканчивающиеся на «?» занимают не более 25% раундов. Зрители часто задают вопросы — без лимита стример угадывает по теме, а не по стилю. <br><br><b>Чтобы включить по умолчанию</b> — в файле <code>js/settings.js</code> найди строку <code>cfg.limitQuestions = document.getElementById('opt-noq').checked</code> и в HTML установи <code>id="opt-noq" checked</code>.</div>
+                <div id="noq-tip" class="tooltip-pop" data-i18n-html="limitQuestionsTip"></div>
               </div>
             </div>
             <div style="font-size:10px;color:var(--c-muted);" data-i18n="limitQuestionsDesc">Не больше 25% раундов с «?»</div>
@@ -256,9 +256,9 @@
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:14px;flex-shrink:0;">
-      <div style="display:flex;align-items:center;gap:7px;background:rgba(63,191,122,0.1);border:1px solid rgba(63,191,122,0.3);border-radius:50px;padding:6px 14px;">
-        <div style="width:7px;height:7px;border-radius:50%;background:var(--c-green);box-shadow:0 0 8px var(--c-green);animation:glowPulse 1.5s ease-in-out infinite;flex-shrink:0;"></div>
-        <span style="font-size:12px;color:var(--c-green);font-weight:700;">Live</span>
+      <div id="live-badge" style="display:flex;align-items:center;gap:7px;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.3);border-radius:50px;padding:6px 14px;">
+        <div id="live-dot" style="width:7px;height:7px;border-radius:50%;background:var(--c-red);box-shadow:0 0 8px var(--c-red);flex-shrink:0;"></div>
+        <span id="live-text" style="font-size:12px;color:var(--c-red);font-weight:700;">Offline</span>
       </div>
       <div style="position:relative;width:52px;height:52px;">
         <svg width="52" height="52" viewBox="0 0 100 100" style="transform:rotate(-90deg)">
@@ -404,11 +404,7 @@
 <div id="rules-modal" class="modal-overlay hidden" onclick="app.closeRules()">
   <div class="liquid-glass modal-box" style="padding:30px;max-width:440px;width:100%;margin:16px;max-height:88vh;overflow-y:auto;" onclick="event.stopPropagation()">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;"><div class="font-display grad-text" style="font-size:22px;font-weight:700;" data-i18n="rulesTitle">📖 Как играть</div><button onclick="app.closeRules()" style="width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);font-size:18px;">✕</button></div>
-    <div class="rule-row"><div class="rule-ico">📡</div><div><div style="font-weight:600;font-size:14px;margin-bottom:2px;">1. Подключи канал</div><div style="font-size:12px;color:var(--c-muted);line-height:1.55;">Введи никнейм Twitch-канала. Игра соберёт сообщения в реальном времени.</div></div></div>
-    <div class="rule-row"><div class="rule-ico">🙈</div><div><div style="font-weight:600;font-size:14px;margin-bottom:2px;">2. Скрой чат!</div><div style="font-size:12px;color:var(--c-muted);line-height:1.55;">Закрой чат — угадывай по стилю, а не подсматривая.</div></div></div>
-    <div class="rule-row"><div class="rule-ico">🎭</div><div><div style="font-weight:600;font-size:14px;margin-bottom:2px;">3. 12 режимов</div><div style="font-size:12px;color:var(--c-muted);line-height:1.55;">Классика, правда/фейк, пропущенное слово, два из четырёх, 7TV, эмоджи-цепочка и другие.</div></div></div>
-    <div class="rule-row"><div class="rule-ico">📣</div><div><div style="font-weight:600;font-size:14px;margin-bottom:2px;">4. Модеры</div><div style="font-size:12px;color:var(--c-muted);line-height:1.55;">Пишут <b style="color:var(--c-accent2);">!s текст</b> — сообщение всплывает слева. Рейды, сабы, битсы тоже.</div></div></div>
-    <div class="rule-row"><div class="rule-ico">🔥</div><div><div style="font-weight:600;font-size:14px;margin-bottom:2px;">5. Стрик и бонусы</div><div style="font-size:12px;color:var(--c-muted);line-height:1.55;">Серия верных ответов = множитель очков. Подсказки ½, пропуск, подсветка — по одной за игру.</div></div></div>
+    <div data-i18n-html="rulesContent"></div>
     <button class="btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:8px;" onclick="app.closeRules()" data-i18n="understoodBtn">ПОНЯТНО!</button>
   </div>
 </div>
@@ -417,14 +413,7 @@
 <div id="faq-modal" class="modal-overlay hidden" onclick="app.closeFaq()">
   <div class="liquid-glass modal-box" style="padding:30px;max-width:460px;width:100%;margin:16px;max-height:88vh;overflow-y:auto;" onclick="event.stopPropagation()">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;"><div class="font-display grad-text" style="font-size:22px;font-weight:700;">❓ FAQ</div><button onclick="app.closeFaq()" style="width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);font-size:18px;">✕</button></div>
-    <div class="rule-row"><div class="rule-ico">🔌</div><div><div style="font-weight:600;font-size:14px;margin-bottom:2px;">Не подключается к чату</div><div style="font-size:12px;color:var(--c-muted);line-height:1.55;">Проверь никнейм. Для 7TV нужен https.</div></div></div>
-    <div class="rule-row"><div class="rule-ico">👥</div><div><div style="font-weight:600;font-size:14px;margin-bottom:2px;">Сколько нужно зрителей?</div><div style="font-size:12px;color:var(--c-muted);line-height:1.55;">Минимум 4 для досрочного старта. Цель — ползунок в настройках.</div></div></div>
-    <div class="rule-row"><div class="rule-ico">🔗</div><div><div style="font-weight:600;font-size:14px;margin-bottom:2px;">Что такое «Только ссылки»?</div><div style="font-size:12px;color:var(--c-muted);line-height:1.55;">Только сообщения со ссылками участвуют. Эмоут-режимы отключаются.</div></div></div>
-    <div class="rule-row"><div class="rule-ico">🔗</div><div><div style="font-weight:600;font-size:14px;margin-bottom:2px;">Что такое «Эмоджи-цепочка»?</div><div style="font-size:12px;color:var(--c-muted);line-height:1.55;">Из реального сообщения вырезается один эмодзи, а слова заменяются на ⬜. Нужно угадать автора по стилю расстановки эмодзи.</div></div></div>
-    <div class="rule-row"><div class="rule-ico">🔢</div><div><div style="font-weight:600;font-size:14px;margin-bottom:2px;">Сколько будет раундов?</div><div style="font-size:12px;color:var(--c-muted);line-height:1.55;">Ровно столько, сколько игроков вошло в раунд. Вошло 17 из 20 — будет 17 вопросов. Каждое сообщение уникально, и каждый вошедший игрок участвует ровно один раз — повторов нет.</div></div></div>
-    <div class="rule-row"><div class="rule-ico">🎲</div><div><div style="font-weight:600;font-size:14px;margin-bottom:2px;">Как часто выпадают режимы?</div><div style="font-size:12px;color:var(--c-muted);line-height:1.55;">В каждом раунде режим выбирается <b>равновероятно</b> среди доступных. Если активно N режимов и все доступны — у каждого примерно <b>100% ÷ N</b> шанс (8 режимов ≈ 12.5% каждый, 12 режимов ≈ 8.3%).<br><br>Но некоторые режимы выпадают <b>реже</b>, потому что доступны не всегда:<br>• <b>🖼️ Кто скинул?</b> — только если в чате есть ссылки;<br>• <b>🎨 7TV смайл</b> — только если у канала загружено 5+ эмоутов;<br>• <b>😎 Смайл/слово?</b> — максимум <b>1 раз за игру</b> и только при наличии эмоутов;<br>• <b>👥 Два из четырёх</b> и <b>🕵️ Свой почерк</b> — только если есть игроки с 2+ сообщениями;<br>• <b>🔗 Эмоджи-цепочка</b> — только если 2+ сообщения содержат эмодзи.<br><br>Если для сообщения ни один особый режим не подходит — будет 🎯 Классика. В режиме «Только ссылки» текстовые режимы (пропущенное слово, правда/фейк, первое слово и др.) отключаются.</div></div></div>
-    <div class="rule-row"><div class="rule-ico">💾</div><div><div style="font-weight:600;font-size:14px;margin-bottom:2px;">Сохраняются ли данные?</div><div style="font-size:12px;color:var(--c-muted);line-height:1.55;">Настройки и последние 20 игр — в localStorage. Никуда не отправляются.</div></div></div>
-    <div class="rule-row"><div class="rule-ico">✨</div><div><div style="font-weight:600;font-size:14px;margin-bottom:2px;">Авторы</div><div style="font-size:12px;color:var(--c-muted);line-height:1.55;">Авторы идеи: afaplein (aka cyberr) &amp; <a href="https://www.twitch.tv/lootych" target="_blank" rel="noopener" style="color:var(--c-accent);text-decoration:none;font-weight:600;">Lootych</a>. Реализовано <a href="https://t.me/rudionee" target="_blank" rel="noopener" style="color:var(--c-accent);text-decoration:none;font-weight:600;">Rudionee</a>.</div></div></div>
+    <div data-i18n-html="faqContent"></div>
     <button class="btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:8px;" onclick="app.closeFaq()" data-i18n="closedBtn">ЗАКРЫТЬ</button>
   </div>
 </div>

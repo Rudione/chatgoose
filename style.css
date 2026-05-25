@@ -92,8 +92,9 @@ input[type=range]:active::-webkit-slider-thumb{transform:scale(1.3);}
 #streak-badge{background:linear-gradient(135deg,#ff9a3c,#ff6b91);border-radius:50px;padding:7px 15px;font-family:'Clash Display',sans-serif;font-weight:600;font-size:14px;transition:all .3s;}
 
 .hint-btn{width:44px;height:44px;border-radius:13px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);cursor:pointer;font-family:'Clash Display',sans-serif;font-weight:600;color:var(--c-accent);font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
-.hint-btn:hover:not(.used){background:rgba(139,125,255,0.2);border-color:var(--c-accent);transform:translateY(-2px);}
+.hint-btn:hover:not(.used):not(.hint-unavailable){background:rgba(139,125,255,0.2);border-color:var(--c-accent);transform:translateY(-2px);}
 .hint-btn.used{opacity:.2;pointer-events:none;}
+.hint-btn.hint-unavailable{opacity:.25;cursor:not-allowed;filter:grayscale(1);}
 #mode-badge{display:inline-block;padding:6px 16px;border-radius:50px;font-family:'Clash Display',sans-serif;font-weight:600;font-size:12px;letter-spacing:.07em;text-transform:uppercase;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);margin-bottom:18px;}
 .step-card{background:rgba(255,255,255,0.025);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:16px 10px;text-align:center;cursor:pointer;transition:all .25s;}
 .step-card:hover{background:rgba(139,125,255,0.1);border-color:rgba(139,125,255,0.36);transform:translateY(-4px);box-shadow:0 8px 26px rgba(139,125,255,0.2);}
