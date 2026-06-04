@@ -16,7 +16,7 @@ const Settings = {
             cfg.timerTotal = parseInt(document.getElementById('timer-total-slider').value) * 60;
         const lo = document.querySelector('input[name="msgfilter"]:checked');
         cfg.linksOnly = lo ? lo.value === 'links' : false;
-        const mids = ['classic','tf','censor','tf2','modview','media','emote','detective','firstword','2of4','7tv','emoji-chain'];
+        const mids = ['classic','tf','censor','tf2','modview','media','emote','detective','firstword','2of4','7tv','emoji-chain','capscheck','speedrace'];
         cfg.activeModes = mids.filter(m => document.getElementById('mode-' + m)?.checked);
         if (!cfg.activeModes.length) cfg.activeModes = ['classic'];
         this.save();
@@ -82,7 +82,7 @@ const Settings = {
             if (r) { r.checked = true; this._syncFilterTabs(); }
         }
         if (s.activeModes?.length) {
-            const mids = ['classic','tf','censor','tf2','modview','media','emote','detective','firstword','2of4','7tv','emoji-chain'];
+            const mids = ['classic','tf','censor','tf2','modview','media','emote','detective','firstword','2of4','7tv','emoji-chain','capscheck','speedrace'];
             mids.forEach(m => { const el = document.getElementById('mode-' + m); if (el) el.checked = s.activeModes.includes(m); });
         }
         if (s.channel) {

@@ -140,11 +140,14 @@ const Modes = {
     },
 
     renderMedia(u) {
+        // ТОЛЬКО URL'ы target-юзера — чтобы не подменять автора и не выдавать одного игрока за нескольких
         const usedCombos = app._usedMediaCombos || (app._usedMediaCombos = new Set());
         const candidates = [];
-        app.users.forEach(u2 => u2.urls?.forEach(url => candidates.push({ user: u2, url })));
+        if (u.user?.urls?.length) {
+            u.user.urls.forEach(url => candidates.push({ user: u.user, url }));
+        }
         app.allMessages.forEach(m => {
-            if (!m.url) return;
+            if (!m.url || m.name !== u.name) return;
             const userObj = app.users.get(m.name) || { name: m.name, color: '#9ca3af', user: null };
             candidates.push({ user: userObj, url: m.url });
         });
@@ -250,17 +253,10 @@ const Modes = {
 
     renderGuess7tv(u) {
         const scan = msg => { for (const w of (msg.text || '').split(/\s+/)) { if (Emotes.is7tv(w)) return w; } return null; };
-        let pick = null;
+        // ТОЛЬКО target — иначе бы получалось что другой юзер играл лишний раз
         const found = scan(u);
-        if (found) { pick = { user: u.user, name: u.name, text: u.text, emote: found }; }
-        else {
-            const pool = [...app.allMessages]; app.shuffle(pool);
-            for (const m of pool) {
-                const e = scan(m);
-                if (e) { const usr = app.users.get(m.name) || { name: m.name, color: '#9ca3af', user: null }; pick = { user: usr, name: m.name, text: m.text, emote: e }; break; }
-            }
-        }
-        if (!pick) { app.state.currentMode = 'CLASSIC'; this.renderClassic(u); return; }
+        if (!found) { app.state.currentMode = 'CLASSIC'; this.renderClassic(u); return; }
+        const pick = { user: u.user, name: u.name, text: u.text, emote: found };
         UI.setBadge(t('badge7tv'), 'var(--c-accent2)');
         const shown = pick.text.split(/\s+/).map(w =>
             w === pick.emote
@@ -371,15 +367,11 @@ const Modes = {
     },
 
     renderEmojiChain(u) {
-        const allMsgs = [
-            ...Array.from(app.users.values()).flatMap(v => v.messages.map(txt => ({ name: v.name, text: txt, user: v }))),
-            ...app.allMessages.map(m => ({ name: m.name, text: m.text, user: app.users.get(m.name) || { name: m.name, color: '#9ca3af' } }))
-        ];
-        const withEmoji = allMsgs.filter(m => /\p{Emoji}/u.test(m.text) && m.text.replace(/\p{Emoji}/gu, '').trim().length > 1);
-        if (withEmoji.length < 2) { app.state.currentMode = 'CLASSIC'; this.renderClassic(u); return; }
+        // Берём именно target-юзера (а не случайного — иначе другой юзер играл бы лишний раз)
+        const base = { name: u.name, text: u.text, user: u.user || { name: u.name, color: '#9ca3af' } };
+        const hasEmoji = /\p{Emoji}/u.test(base.text) && base.text.replace(/\p{Emoji}/gu, '').trim().length > 1;
+        if (!hasEmoji) { app.state.currentMode = 'CLASSIC'; this.renderClassic(u); return; }
 
-        app.shuffle(withEmoji);
-        const base = withEmoji[0];
         const baseEmojis = [...base.text.matchAll(/\p{Emoji}/gu)].map(m => m[0]);
         if (!baseEmojis.length) { app.state.currentMode = 'CLASSIC'; this.renderClassic(u); return; }
 
@@ -400,5 +392,65 @@ const Modes = {
 
         const opts = [...decoyAuthors, correctAuthor]; app.shuffle(opts);
         app.renderAnswers(opts.map(n => ({ html: UI.nickColor(n), correct: n === correctAuthor })));
+    },
+
+    // 🎯 CAPSCHECK — определяет, писал ли юзер сообщение КАПСОМ или обычно
+    renderCapsCheck(u) {
+        UI.setBadge(t('badgeCapsCheck') || '🎯 КАПС ИЛИ ОБЫЧНО?', 'var(--c-gold)');
+        const text = u.text;
+        const isAllCaps = text === text.toUpperCase() && /[a-zа-яё]/i.test(text) && text.length >= 4;
+        // показываем сообщение в "нейтральном" виде — нижним регистром
+        const neutralized = text.toLowerCase();
+        document.getElementById('question-area').innerHTML =
+            `<div style="font-size:15px;color:var(--c-muted);margin-bottom:10px;">${UI.nickHtml(u)} ${t('capsCheckSub') || 'написал сообщение. Как именно?'}</div>
+             <div class="glass2" style="padding:17px 20px;font-size:19px;font-style:italic;opacity:.92;">"${Emotes.parse(neutralized)}"</div>
+             <div style="font-size:11px;color:var(--c-muted);margin-top:8px;">${t('capsCheckHint') || 'Регистр стёрли — угадай как было на самом деле'}</div>`;
+        app.renderAnswers([
+            { html: `<span style="font-size:17px;font-weight:800;letter-spacing:.05em;">🔊 ${t('capsAnswerCaps') || 'КАПСОМ'}</span>`, correct: isAllCaps },
+            { html: `<span style="font-size:15px;">💬 ${t('capsAnswerNormal') || 'обычно'}</span>`, correct: !isAllCaps }
+        ]);
+    },
+
+    // ⚡ SPEEDRACE — что было раньше: target сообщение или другое
+    renderSpeedRace(u) {
+        // ищем все сообщения с известным "временным порядком" — берём из app.allMessages (там они в порядке прихода)
+        // и из u.messages (взяты ранее). Используем индекс в allMessages как proxy времени.
+        const targetIdx = app.allMessages.findIndex(m => m.name === u.name && m.text === u.text);
+        // candidate = другое сообщение другого юзера, чей индекс известен
+        const others = app.allMessages
+            .map((m, i) => ({ ...m, idx: i }))
+            .filter(m => m.name !== u.name && m.text.length > 2 && !app._revealedTexts.has(m.text));
+        if (others.length < 2 || targetIdx < 0) {
+            // fallback в Classic
+            app.state.currentMode = 'CLASSIC';
+            this.renderClassic(u);
+            return;
+        }
+        // выбираем "соперника" — желательно с заметной разницей по времени
+        app.shuffle(others);
+        let opponent = others[0];
+        for (const o of others) {
+            if (Math.abs(o.idx - targetIdx) >= 2) { opponent = o; break; }
+        }
+        const targetFirst = targetIdx < opponent.idx;
+        UI.setBadge(t('badgeSpeedRace') || '⚡ КТО БЫСТРЕЕ?', 'var(--c-blue)');
+        const targetUser = u.user || { name: u.name, color: '#9ca3af' };
+        const oppUser = app.users.get(opponent.name) || { name: opponent.name, color: '#9ca3af' };
+        const card = (usr, txt) => `
+            <div class="glass2" style="padding:14px 16px;">
+              <div style="font-size:13px;font-weight:800;color:${usr.color || '#9ca3af'};margin-bottom:6px;">${usr.name}</div>
+              <div style="font-size:14px;line-height:1.45;">"${Emotes.parse(txt.length > 70 ? txt.slice(0,70)+'…' : txt)}"</div>
+            </div>`;
+        document.getElementById('question-area').innerHTML =
+            `<div style="font-size:15px;color:var(--c-muted);margin-bottom:12px;">${t('speedRaceQ') || 'Какое сообщение появилось в чате РАНЬШЕ?'}</div>
+             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;">
+               ${card(targetUser, u.text)}
+               ${card(oppUser, opponent.text)}
+             </div>`;
+        // на ответы 2 кнопки
+        app.renderAnswers([
+            { html: `<span style="font-weight:800;">${targetUser.name}</span> <span style="color:var(--c-muted);font-size:12px;">${t('speedFirst') || '— написал первым'}</span>`, correct: targetFirst },
+            { html: `<span style="font-weight:800;">${oppUser.name}</span> <span style="color:var(--c-muted);font-size:12px;">${t('speedFirst') || '— написал первым'}</span>`, correct: !targetFirst }
+        ]);
     }
 };

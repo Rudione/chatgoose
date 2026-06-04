@@ -90,7 +90,11 @@ const UI = {
         const loadingComps = document.querySelectorAll('.scene-loading-comp');
         loadingComps.forEach(el => el.classList.toggle('hidden', id !== 'loading'));
 
-        ['login','loading','warning-pre','game','final','result'].forEach(s => {
+        const allScenes = ['login','mode-select','loading','warning-pre','game','final','result',
+            'lastcall-checklist','lastcall-game','lastcall-result',
+            'roast-checklist','roast-collect','roast-game','roast-result',
+            'oracle-checklist','oracle-question','oracle-game','oracle-postfact','oracle-result','oracle-leaderboard'];
+        allScenes.forEach(s => {
             const el = document.getElementById('scene-' + s);
             if (el) el.classList.add('hidden');
             const act = document.getElementById('scene-' + s + '-actions');
@@ -108,9 +112,9 @@ const UI = {
         const btnSettings = document.getElementById('btn-settings');
         const topCtrl = document.getElementById('top-controls');
         const btnExit = document.getElementById('btn-exit-game');
-        const isGame = id === 'game' || id === 'final';
+        const isGame = id === 'game' || id === 'final' || id === 'lastcall-game' || id === 'roast-collect' || id === 'roast-game' || id === 'oracle-question' || id === 'oracle-game' || id === 'oracle-postfact';
 
-        if (btnSettings) btnSettings.style.display = (id === 'login' || id === 'warning-pre' || id === 'loading') ? 'flex' : 'none';
+        if (btnSettings) btnSettings.style.display = (id === 'mode-select' || id === 'warning-pre' || id === 'loading' || id === 'lastcall-checklist' || id === 'roast-checklist' || id === 'oracle-checklist') ? 'flex' : 'none';
         if (topCtrl) topCtrl.style.display = isGame ? 'none' : 'flex';
         if (btnExit) btnExit.style.display = isGame ? 'flex' : 'none';
     },
@@ -192,7 +196,8 @@ const UI = {
                 modview: { icon: '🛡️', key: 'modeModview' }, media: { icon: '🖼️', key: 'modeMedia' },
                 emote: { icon: '😎', key: 'modeEmote' }, detective: { icon: '🕵️', key: 'modeDetective' },
                 firstword: { icon: '🔠', key: 'modeFirstword' }, '2of4': { icon: '👥', key: 'mode2of4' },
-                '7tv': { icon: '🎨', key: 'mode7tv' }, 'emoji-chain': { icon: '🔗', key: 'modeEmojiChain' }
+                '7tv': { icon: '🎨', key: 'mode7tv' }, 'emoji-chain': { icon: '🔗', key: 'modeEmojiChain' },
+                capscheck: { icon: '🎯', key: 'modeCapscheck' }, speedrace: { icon: '⚡', key: 'modeSpeedrace' }
             };
             const filterLabel = app.config.linksOnly ? t('modeLinks') : t('modeAll');
             const filterColor = app.config.linksOnly ? 'var(--c-accent2)' : 'var(--c-accent)';

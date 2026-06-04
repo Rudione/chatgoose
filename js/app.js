@@ -113,6 +113,8 @@ window.app = {
         return true;
     },
 
+    selectedMode: 'chatgoose',
+
     connect() {
         const ch = document.getElementById('channel-input').value.trim();
         if (!ch) { document.getElementById('channel-input').style.borderColor = 'var(--c-red)'; return; }
@@ -121,12 +123,43 @@ window.app = {
         Sound.click();
         this._connectedChannel = ch;
         Settings.save();
-        UI.switchScene('warning-pre');
-        UI.buildWarningPreScreen();
+        const nm = document.getElementById('ms-channel-name'); if (nm) nm.innerText = ch;
+        UI.switchScene('mode-select');
         Emotes.load(ch);
+        // Roast собирает чат с момента подключения (даже если стример выберет другой режим)
+        if (window.Roast) Roast.beginCollecting();
         this.client = new tmi.Client({ channels: [ch] });
         this.client.connect().catch(e => { alert(t('errConnecting') + e); UI.switchScene('login'); });
         this._bindChatEvents();
+    },
+
+    selectMode(mode) {
+        Sound.click();
+        this.selectedMode = mode;
+        if (mode === 'chatgoose') {
+            // подтянуть актуальные настройки (на случай если открывали настройки на mode-select)
+            Settings.read();
+            document.getElementById('users-target').innerText = '/' + this.config.needed;
+            UI.switchScene('warning-pre');
+            UI.buildWarningPreScreen();
+        } else if (mode === 'lastcall') {
+            UI.switchScene('lastcall-checklist');
+            if (window.LastCall) LastCall.loadSettings();
+        } else if (mode === 'roast') {
+            UI.switchScene('roast-checklist');
+            if (window.Roast) Roast.loadSettings();
+        } else if (mode === 'oracle') {
+            UI.switchScene('oracle-checklist');
+            if (window.Oracle) Oracle.loadSettings();
+        }
+    },
+
+    backToModeSelect() {
+        Sound.click();
+        if (window.LastCall) LastCall.cleanup();
+        if (window.Roast) Roast.cleanup();
+        if (window.Oracle) Oracle.cleanup();
+        UI.switchScene('mode-select');
     },
 
     _bindChatEvents() {
@@ -143,6 +176,11 @@ window.app = {
             if (BANNED.some(w => lm.includes(w))) return;
             const url = extractUrl(m);
             Words.harvest(m);
+
+            // Прокидываем сообщение в LastCall, Roast, Oracle (если активны)
+            if (window.LastCall && LastCall.isActive) LastCall.onMessage(name, m, tags);
+            if (window.Roast    && Roast.isCollecting) Roast.onMessage(name, m, tags);
+            if (window.Oracle   && Oracle.isCollecting) Oracle.onMessage(name, m, tags);
 
             if (!this.state.active && this._collectingMessages) {
                 if (this.config.linksOnly && !url) return;
@@ -178,6 +216,10 @@ window.app = {
 
     proceedToLoading() {
         Sound.click();
+        // сброс данных перед стартом CHATGOOSE: Roast мог накопить юзеров в app.users
+        // в фоне — для CHATGOOSE начинаем чистый отсчёт
+        this.users.clear();
+        this.allMessages = [];
         this._collectingMessages = true;
         UI.switchScene('loading');
         UI.initChatScroll();
@@ -242,6 +284,31 @@ window.app = {
     },
 
     goBack() {
+        // Если сейчас warning-pre или loading — вернуться на mode-select, сохранив коннект
+        const onWarning = !document.getElementById('scene-warning-pre').classList.contains('hidden');
+        const onLoading = !document.getElementById('scene-loading').classList.contains('hidden');
+        if ((onWarning || onLoading) && this.client) {
+            this._collectingMessages = false;
+            this.users = new Map(); this.allMessages = []; this.gamePool = [];
+            Words.bank = []; Words._freq = new Map(); Words._dirty = 0;
+            const jug = document.getElementById('joined-users-grid');
+            const cml = document.getElementById('chat-messages-list');
+            if (jug) jug.innerHTML = '';
+            if (cml) cml.innerHTML = '';
+            document.getElementById('users-count').innerText = '0';
+            document.getElementById('progress-ring').style.strokeDashoffset = '251';
+            const bs = document.getElementById('btn-start'), be = document.getElementById('btn-early-start');
+            if (bs) { bs.disabled = true; bs.style.opacity = '.4'; bs.style.cursor = 'not-allowed'; bs.innerText = t('waitingBtn'); }
+            if (be) { be.disabled = true; be.style.opacity = '.4'; be.style.cursor = 'not-allowed'; }
+            const earlyWrap = document.getElementById('loading-btn-early-wrap');
+            const startWrap = document.getElementById('loading-btn-start-wrap');
+            if (earlyWrap) earlyWrap.classList.add('hidden');
+            if (startWrap) startWrap.classList.add('hidden');
+            UI.switchScene('mode-select');
+            Sound.click();
+            return;
+        }
+        // Иначе — полный сброс на login
         this._clearAllTimers();
         this.state.active = false;
         try { if (this.client) { this.client.disconnect(); this.client = null; } } catch(e) {}
@@ -251,6 +318,7 @@ window.app = {
         this.playedMessages = new Set(); this.questionRoundCount = 0;
         this._emoteOrWordUsed = false; this._firstWordTrapCount = 0;
         this._revealedTexts = new Set(); this._quizzedAuthors = new Set();
+        this._playedAuthors = new Set();
         this._authorQuestionTexts = new Set();
         this._finalChecked = false;
         this.state = {
@@ -280,6 +348,9 @@ window.app = {
         document.getElementById('timer-bar-outer').style.display = 'none';
         document.getElementById('history-panel').style.display = 'none';
         document.getElementById('live-events').style.display = 'none';
+        if (window.LastCall) LastCall.cleanup();
+        if (window.Roast) Roast.fullReset();
+        if (window.Oracle) Oracle.cleanup();
         Storage.clear(Storage.KEYS.session);
         UI.switchScene('login');
         Sound.click();
@@ -293,7 +364,10 @@ window.app = {
     startCountdown() {
         Sound.click();
         document.getElementById('scene-countdown').classList.remove('hidden');
-        ['login','loading','warning-pre','game','final','result'].forEach(s => {
+        ['login','mode-select','loading','warning-pre','game','final','result',
+         'lastcall-checklist','lastcall-game','lastcall-result',
+         'roast-checklist','roast-collect','roast-game','roast-result',
+         'oracle-checklist','oracle-question','oracle-game','oracle-postfact','oracle-result','oracle-leaderboard'].forEach(s => {
             const el = document.getElementById('scene-' + s); if (el) el.classList.add('hidden');
             const act = document.getElementById('scene-' + s + '-actions'); if (act) act.classList.add('hidden');
         });
@@ -328,6 +402,7 @@ window.app = {
         this._emoteOrWordUsed = false; this._firstWordTrapCount = 0;
         this._authorQuestionTexts = new Set(); this._usedMediaCombos = new Set();
         this._revealedTexts = new Set(); this._quizzedAuthors = new Set();
+        this._playedAuthors = new Set();
         this._finalChecked = false; this._pendingTimers = [];
 
         document.getElementById('scene-countdown').classList.add('hidden');
@@ -359,7 +434,7 @@ window.app = {
     },
 
     getModeList() {
-        const mp = { classic:'CLASSIC', tf:'TRUE_FALSE', censor:'CENSORED', tf2:'WHOSE_MSG', modview:'MOD_VS_VIEWER', media:'MEDIA', emote:'EMOTE_OR_WORD', detective:'DETECTIVE', firstword:'FIRST_WORD', '2of4':'TWO_OF_FOUR', '7tv':'GUESS_7TV', 'emoji-chain':'EMOJI_CHAIN' };
+        const mp = { classic:'CLASSIC', tf:'TRUE_FALSE', censor:'CENSORED', tf2:'WHOSE_MSG', modview:'MOD_VS_VIEWER', media:'MEDIA', emote:'EMOTE_OR_WORD', detective:'DETECTIVE', firstword:'FIRST_WORD', '2of4':'TWO_OF_FOUR', '7tv':'GUESS_7TV', 'emoji-chain':'EMOJI_CHAIN', capscheck:'CAPSCHECK', speedrace:'SPEEDRACE' };
         return this.config.activeModes.map(k => mp[k]).filter(Boolean);
     },
 
@@ -423,8 +498,10 @@ window.app = {
         const gc = document.getElementById('game-card'); gc.style.animation = 'none'; void gc.offsetWidth; gc.style.animation = 'scaleIn .35s cubic-bezier(0.16,1,0.3,1)';
 
         let modes = this.getModeList();
-        const hasUrls = this.allMessages.some(m => m.url) || Array.from(this.users.values()).some(u => u.urls?.length > 0);
-        if (!hasUrls) modes = modes.filter(m => m !== 'MEDIA');
+        // Все режимы должны работать с конкретным target-юзером, а не подменять автора.
+        // Иначе один юзер случайно становится "героем" нескольких раундов.
+        const targetHasUrl = !!(target.user?.urls?.length) || this.allMessages.some(m => m.name === target.name && m.url);
+        if (!targetHasUrl) modes = modes.filter(m => m !== 'MEDIA');
         if (this.config.linksOnly) modes = modes.filter(m => !['EMOTE_OR_WORD','GUESS_7TV','FIRST_WORD','CENSORED','TRUE_FALSE','EMOJI_CHAIN'].includes(m));
 
         if (!this._revealedTexts) this._revealedTexts = new Set();
@@ -436,9 +513,16 @@ window.app = {
 
         if (this._emoteOrWordUsed) modes = modes.filter(m => m !== 'EMOTE_OR_WORD');
         if (Emotes.map.size === 0) modes = modes.filter(m => m !== 'EMOTE_OR_WORD');
-        if (Emotes.set7tv.size < 5) modes = modes.filter(m => m !== 'GUESS_7TV');
-        const withEmoji = this.allMessages.filter(m => /\p{Emoji}/u.test(m.text) && m.text.replace(/\p{Emoji}/gu,'').trim().length > 1);
-        if (withEmoji.length < 2) modes = modes.filter(m => m !== 'EMOJI_CHAIN');
+        // 7TV — только если у target в сообщении есть 7TV эмоут (иначе режим бы взял чужого юзера)
+        const targetHas7tv = Emotes.set7tv.size >= 5 && target.text.split(/\s+/).some(w => Emotes.is7tv(w));
+        if (!targetHas7tv) modes = modes.filter(m => m !== 'GUESS_7TV');
+        // EMOJI_CHAIN — только если у target в сообщении есть эмодзи
+        const targetHasEmoji = /\p{Emoji}/u.test(target.text) && target.text.replace(/\p{Emoji}/gu,'').trim().length > 1;
+        if (!targetHasEmoji) modes = modes.filter(m => m !== 'EMOJI_CHAIN');
+        // SPEEDRACE — нужно 2+ сообщений у разных юзеров (для сравнения времени)
+        if (this.allMessages.length < 4) modes = modes.filter(m => m !== 'SPEEDRACE');
+        // CAPSCHECK — нужны 4+ юзера
+        if (this.users.size < 4) modes = modes.filter(m => m !== 'CAPSCHECK');
 
         if (this._quizzedAuthors.has(target.name) || this._authorQuestionTexts.has(target.text) || this._revealedTexts.has(target.text)) {
             const f = modes.filter(m => m !== 'CLASSIC' && m !== 'MEDIA');
@@ -449,7 +533,8 @@ window.app = {
         const mode = modes[Math.floor(Math.random() * modes.length)];
         this.state.currentMode = mode;
         this._revealedTexts.add(target.text);
-        if (mode === 'CLASSIC' || mode === 'MEDIA' || mode === 'WHOSE_MSG' || mode === 'DETECTIVE' || mode === 'TWO_OF_FOUR') {
+        this._playedAuthors.add(target.name);
+        if (mode === 'CLASSIC' || mode === 'MEDIA' || mode === 'WHOSE_MSG' || mode === 'DETECTIVE' || mode === 'TWO_OF_FOUR' || mode === 'CAPSCHECK' || mode === 'SPEEDRACE') {
             this._authorQuestionTexts.add(target.text);
             this._quizzedAuthors.add(target.name);
         }
@@ -466,7 +551,9 @@ window.app = {
             FIRST_WORD:    () => Modes.renderFirstWord(target),
             TWO_OF_FOUR:   () => Modes.renderTwoOfFour(target),
             GUESS_7TV:     () => Modes.renderGuess7tv(target),
-            EMOJI_CHAIN:   () => Modes.renderEmojiChain(target)
+            EMOJI_CHAIN:   () => Modes.renderEmojiChain(target),
+            CAPSCHECK:     () => Modes.renderCapsCheck(target),
+            SPEEDRACE:     () => Modes.renderSpeedRace(target)
         };
         (renders[mode] || renders.CLASSIC)();
         this._updateHintAvailability(mode);
@@ -594,7 +681,7 @@ window.app = {
 
     _updateHintAvailability(mode) {
         // ½ hint only works in modes with standard correct/wrong answer buttons
-        const fiftyWorks = !['TWO_OF_FOUR', 'WHOSE_MSG', 'FIRST_WORD', 'GUESS_7TV', 'EMOJI_CHAIN', 'CENSORED'].includes(mode);
+        const fiftyWorks = !['TWO_OF_FOUR', 'WHOSE_MSG', 'FIRST_WORD', 'GUESS_7TV', 'EMOJI_CHAIN', 'CENSORED', 'CAPSCHECK', 'SPEEDRACE'].includes(mode);
         const btn50 = document.getElementById('hint-50');
         if (btn50 && !btn50.classList.contains('used')) {
             btn50.classList.toggle('hint-unavailable', !fiftyWorks);
