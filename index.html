@@ -188,7 +188,7 @@
     <div style="width:100%;height:6px;background:rgba(255,255,255,0.07);border-radius:10px;overflow:hidden;"><div id="timer-bar" style="height:100%;border-radius:10px;background:linear-gradient(90deg,var(--c-accent),var(--c-accent2));transition:width .1s linear;width:100%;"></div></div>
   </div>
 
-  <!-- LOGIN -->
+  
   <div id="scene-login" class="scene liquid-glass" style="padding:44px 48px 36px;max-width:560px;position:relative;">
     <div style="text-align:center;margin-bottom:32px;">
       <div class="font-display logo-shimmer" style="font-size:68px;font-weight:700;line-height:1;letter-spacing:-2px;" data-i18n="title">CHATGOOSE</div>
@@ -203,7 +203,7 @@
     <button onclick="app.connect()" class="btn-primary" style="width:100%;padding:18px;font-size:18px;" data-i18n="connectBtn">ПОДКЛЮЧИТЬСЯ</button>
   </div>
 
-  <!-- MODE SELECT -->
+  
   <div id="scene-mode-select" class="scene hidden" style="max-width:920px;width:100%;">
     <div class="liquid-glass" style="padding:24px 28px 18px;margin-bottom:12px;position:relative;overflow:hidden;">
       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--c-accent),var(--c-accent2),var(--c-blue));"></div>
@@ -260,15 +260,15 @@
         </div>
       </div>
 
-      <!-- Доп. режимы — заголовок -->
+      
       <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
         <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.12em;" data-i18n="msExtraModes">Дополнительные режимы</div>
         <div style="flex:1;height:1px;background:rgba(255,255,255,0.08);"></div>
       </div>
 
-      <!-- Малые карточки -->
+      
       <div class="ms-small-grid">
-        <!-- LAST CALL -->
+        
         <div class="ms-card ms-card-lastcall" onclick="app.selectMode('lastcall')">
           <div class="ms-card-bg ms-card-bg-2"></div>
           <div class="ms-card-icon">⏳</div>
@@ -285,7 +285,7 @@
           </div>
         </div>
 
-        <!-- CHAT ROAST AI -->
+        
         <div class="ms-card ms-card-roast" onclick="app.selectMode('roast')">
           <div class="ms-card-bg ms-card-bg-3"></div>
           <div class="ms-card-icon">🔮</div>
@@ -302,7 +302,7 @@
           </div>
         </div>
 
-        <!-- ORACLE -->
+        
         <div class="ms-card ms-card-oracle" onclick="app.selectMode('oracle')">
           <div class="ms-card-bg ms-card-bg-4"></div>
           <div class="ms-card-icon">📊</div>
@@ -326,7 +326,7 @@
     </div>
   </div>
 
-  <!-- WARNING-PRE -->
+  
   <div id="scene-warning-pre" class="scene hidden" style="max-width:580px;width:100%;">
     <div class="liquid-glass" style="padding:22px 26px;margin-bottom:10px;position:relative;overflow:hidden;">
       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--c-accent),var(--c-accent2));"></div>
@@ -376,9 +376,9 @@
     <button onclick="app.proceedToLoading()" class="btn-danger" style="width:100%;padding:17px;font-size:18px;" data-i18n="goBtn">ПОЕХАЛИ! 🚀</button>
   </div>
 
-  <!-- LOADING -->
+  
 
-  <!-- Component: header bar (back + title + live dot + counter) -->
+  
   <div id="loading-header" class="scene-loading-comp hidden" style="width:100%;max-width:900px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;">
     <div style="display:flex;align-items:center;gap:12px;min-width:0;">
       <button onclick="app.goBack()" style="width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
@@ -408,16 +408,16 @@
     </div>
   </div>
 
-  <!-- Component: main content (players + chat) -->
+  
   <div id="scene-loading" class="scene hidden" style="max-width:900px;width:100%;">
     <div style="display:grid;grid-template-columns:1fr 300px;gap:12px;height:420px;">
 
-      <!-- Players grid -->
+      
       <div class="liquid-glass" style="padding:0;overflow:hidden;display:flex;flex-direction:column;">
         <div id="joined-users-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;padding:14px;overflow-y:auto;flex:1;align-content:start;"></div>
       </div>
 
-      <!-- Live chat preview -->
+      
       <div class="liquid-glass" style="padding:0;overflow:hidden;display:flex;flex-direction:column;position:relative;">
         <div style="padding:12px 14px 9px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;">
           <div style="display:flex;align-items:center;gap:7px;">
@@ -435,12 +435,12 @@
     </div>
   </div>
 
-  <!-- Component: start button (shown when room is FULL) -->
+  
   <div id="loading-btn-start-wrap" class="scene-loading-comp hidden" style="width:100%;max-width:900px;margin-top:10px;">
     <button id="btn-start" onclick="app.startCountdown()" disabled class="btn-primary" style="width:100%;padding:16px;font-size:17px;opacity:.4;cursor:not-allowed;" data-i18n="waitingBtn">ОЖИДАНИЕ...</button>
   </div>
 
-  <!-- Component: early start button (shown when 4+ but not full) -->
+  
   <div id="loading-btn-early-wrap" class="scene-loading-comp hidden" style="width:100%;max-width:900px;margin-top:8px;">
     <button id="btn-early-start" onclick="app.startCountdown()" disabled class="btn-ghost" style="width:100%;padding:13px;font-size:14px;opacity:.4;cursor:not-allowed;" data-i18n="earlyStartBtn">НАЧАТЬ ДОСРОЧНО</button>
   </div>
@@ -449,13 +449,12 @@
     <span>⚙️</span><span style="font-size:12px;color:var(--c-muted);font-weight:600;" data-i18n="settingsLink">Настройки</span>
   </div>
 
-
-  <!-- COUNTDOWN -->
+  
   <div id="scene-countdown" class="hidden" style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(6,6,15,0.86);backdrop-filter:blur(20px);">
     <div id="countdown-num" style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:210px;background:linear-gradient(135deg,#8b7dff,#ff79df);-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:countdownPop .6s cubic-bezier(0.34,1.56,0.64,1);">3</div>
   </div>
 
-  <!-- GAME -->
+  
   <div id="scene-game" class="scene hidden" style="max-width:680px;width:100%;">
     <div id="game-card" class="liquid-glass" style="padding:32px;margin-bottom:12px;min-height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden;">
       <div id="mode-badge" style="display:inline-block;padding:6px 16px;border-radius:50px;font-family:'Clash Display',sans-serif;font-weight:600;font-size:12px;letter-spacing:.07em;text-transform:uppercase;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);margin-bottom:18px;">...</div>
@@ -464,7 +463,7 @@
     <div id="answers-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
   </div>
 
-  <!-- FINAL -->
+  
   <div id="scene-final" class="scene liquid-glass hidden" style="padding:0;position:relative;max-height:78vh;display:flex;flex-direction:column;overflow:hidden;max-width:680px;width:100%;">
     <div style="padding:18px 24px 12px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;text-align:center;">
       <div style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,rgba(255,212,112,0.15),rgba(255,121,223,0.1));border:1px solid rgba(255,212,112,0.28);border-radius:50px;padding:6px 18px;margin-bottom:8px;">
@@ -484,7 +483,7 @@
     <button onclick="app.checkFinalRound()" class="btn-primary" style="width:100%;padding:16px;font-size:16px;" data-i18n="finalCheckBtn">✅ ПРОВЕРИТЬ ОТВЕТЫ</button>
   </div>
 
-  <!-- RESULT -->
+  
   <div id="scene-result" class="scene liquid-glass hidden" style="padding:0;position:relative;overflow:hidden;max-width:980px;max-height:90vh;display:flex;flex-direction:column;width:100%;">
     <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--c-accent),var(--c-accent2),var(--c-blue));"></div>
     <div style="display:flex;align-items:center;gap:12px;padding:18px 26px 12px;flex-shrink:0;">
@@ -533,9 +532,9 @@
     <button onclick="app.playAgain()" class="btn-primary" style="width:100%;padding:17px;font-size:17px;" data-i18n="restartBtn">🔄 НАЧАТЬ ЗАНОВО</button>
   </div>
 
-  <!-- ============== LAST CALL ============== -->
+  
 
-  <!-- Checklist -->
+  
   <div id="scene-lastcall-checklist" class="scene hidden" style="max-width:580px;width:100%;">
     <div class="liquid-glass" style="padding:22px 26px;margin-bottom:10px;position:relative;overflow:hidden;">
       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#65d0ff,var(--c-accent));"></div>
@@ -631,7 +630,7 @@
     <button onclick="LastCall.start()" class="btn-primary" style="width:100%;padding:17px;font-size:18px;" data-i18n="lcStartBtn">🚀 ЗАПУСТИТЬ ТАЙМЕР</button>
   </div>
 
-  <!-- LAST CALL — GAME (живой таймер) -->
+  
   <div id="scene-lastcall-game" class="scene hidden" style="max-width:860px;width:100%;">
     <div class="split-2col" style="display:grid;grid-template-columns:1fr 320px;gap:14px;">
       <div class="liquid-glass" style="padding:30px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:380px;position:relative;overflow:hidden;">
@@ -669,7 +668,7 @@
     </div>
   </div>
 
-  <!-- LAST CALL — RESULT -->
+  
   <div id="scene-lastcall-result" class="scene liquid-glass hidden" style="padding:0;position:relative;overflow:hidden;max-width:680px;width:100%;">
     <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#65d0ff,var(--c-accent2));"></div>
     <div style="display:flex;align-items:center;gap:12px;padding:18px 26px 12px;">
@@ -690,10 +689,9 @@
     </div>
   </div>
 
+  
 
-  <!-- ============== CHAT ROAST AI ============== -->
-
-  <!-- Checklist / settings -->
+  
   <div id="scene-roast-checklist" class="scene hidden" style="max-width:600px;width:100%;">
     <div class="liquid-glass" style="padding:22px 26px;margin-bottom:10px;position:relative;overflow:hidden;">
       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#ff79df,var(--c-gold));"></div>
@@ -706,7 +704,7 @@
       <div class="font-display" style="font-size:22px;font-weight:700;margin-bottom:8px;" data-i18n="roastHowTitle">Как работает</div>
       <div style="font-size:13px;color:var(--c-muted);line-height:1.6;margin-bottom:14px;" data-i18n="roastHowDesc">1) Сообщения чата собираются непрерывно с момента подключения. 2) Когда готов — жми «Анализировать». AI прочитает весь чат за стрим. 3) AI навешивает на юзеров характеристики: душнила, красавчик, философ. Угадай по описанию.</div>
 
-      <!-- LIVE STATS — сколько уже собрано -->
+      
       <div class="glass2" style="padding:12px 14px;margin-bottom:10px;background:linear-gradient(135deg,rgba(255,121,223,0.06),rgba(139,125,255,0.04));border-color:rgba(255,121,223,0.2);">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
           <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;display:flex;align-items:center;gap:6px;">
@@ -733,7 +731,7 @@
         <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;" data-i18n="roastCategories">Характеристики (что угадывать)</div>
         <div id="roast-cat-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"></div>
 
-        <!-- Свои характеристики -->
+        
         <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07);">
           <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:flex;align-items:center;gap:6px;"><span>✏️</span><span data-i18n="roastCustomCats">Свои характеристики</span></div>
           <div id="roast-custom-cats-list" style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px;"></div>
@@ -801,7 +799,7 @@
         <textarea id="roast-custom-prompt" rows="2" placeholder="Например: учитывай что Vasya — лучший друг стримера, на него можно жёстко" style="width:100%;padding:8px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:var(--c-text);font-family:'Space Grotesk',sans-serif;font-size:12px;outline:none;resize:vertical;line-height:1.4;"></textarea>
       </div>
 
-      <!-- PROVIDER PICKER -->
+      
       <div class="glass2" style="padding:12px;margin-bottom:10px;">
         <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
           <span data-i18n="roastProvider">🧠 AI-провайдер</span>
@@ -839,7 +837,7 @@
           </button>
         </div>
 
-        <!-- LOCAL INFO -->
+        
         <div id="roast-prov-info-local" class="roast-prov-info">
           <div style="font-size:11px;color:var(--c-muted);line-height:1.5;background:rgba(82,255,182,0.05);border:1px solid rgba(82,255,182,0.2);border-radius:9px;padding:9px 12px;">
             <div style="font-weight:700;color:var(--c-green);margin-bottom:4px;display:flex;align-items:center;gap:5px;"><span>🪶</span><span data-i18n="roastLocalTitle">Локальный анализ (без LLM)</span></div>
@@ -847,7 +845,7 @@
           </div>
         </div>
 
-        <!-- ANTHROPIC -->
+        
         <div id="roast-prov-info-anthropic" class="roast-prov-info" style="display:none;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
             <span style="font-size:10px;color:var(--c-muted);font-weight:600;" data-i18n="roastApiKey">API Key</span>
@@ -864,7 +862,7 @@
           </div>
         </div>
 
-        <!-- OPENAI -->
+        
         <div id="roast-prov-info-openai" class="roast-prov-info" style="display:none;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
             <span style="font-size:10px;color:var(--c-muted);font-weight:600;" data-i18n="roastApiKey">API Key</span>
@@ -881,7 +879,7 @@
           </div>
         </div>
 
-        <!-- XAI -->
+        
         <div id="roast-prov-info-xai" class="roast-prov-info" style="display:none;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
             <span style="font-size:10px;color:var(--c-muted);font-weight:600;" data-i18n="roastApiKey">API Key</span>
@@ -897,7 +895,7 @@
           </div>
         </div>
 
-        <!-- DEEPSEEK -->
+        
         <div id="roast-prov-info-deepseek" class="roast-prov-info" style="display:none;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
             <span style="font-size:10px;color:var(--c-muted);font-weight:600;" data-i18n="roastApiKey">API Key</span>
@@ -913,7 +911,7 @@
           </div>
         </div>
 
-        <!-- CUSTOM (OpenAI-compatible endpoint) -->
+        
         <div id="roast-prov-info-custom" class="roast-prov-info" style="display:none;">
           <div style="font-size:10px;color:var(--c-muted);margin-bottom:6px;line-height:1.4;" data-i18n="roastCustomDesc">Любой OpenAI-совместимый endpoint (Ollama, LM Studio, Together, OpenRouter и т.д.)</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
@@ -945,7 +943,7 @@
     <div style="text-align:center;font-size:10px;color:var(--c-muted);margin-top:7px;" data-i18n="roastAnalyzeHint">Можно нажать в любой момент — чат собирается с момента подключения</div>
   </div>
 
-  <!-- COLLECT/ANALYZE phase (теперь только показ "AI работает") -->
+  
   <div id="scene-roast-collect" class="scene liquid-glass hidden" style="max-width:680px;width:100%;padding:36px 30px;text-align:center;">
     <div class="roast-spinner" style="width:48px;height:48px;border-width:5px;margin:0 auto 20px;"></div>
     <div class="font-display grad-text" style="font-size:24px;font-weight:700;margin-bottom:8px;" data-i18n="roastAnalyzing">AI анализирует чат...</div>
@@ -954,7 +952,7 @@
     <div id="roast-analyzing-stats" style="margin-top:14px;font-size:11px;color:var(--c-muted);"></div>
   </div>
 
-  <!-- GAME phase -->
+  
   <div id="scene-roast-game" class="scene hidden" style="max-width:680px;width:100%;">
     <div id="roast-hud" style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;">
       <div class="hud-pill"><span style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;" data-i18n="roundLabel">Раунд</span><span id="roast-round-val" class="font-display" style="font-size:18px;font-weight:700;">1/8</span></div>
@@ -968,7 +966,7 @@
     <div id="roast-answers" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
   </div>
 
-  <!-- ROAST RESULT -->
+  
   <div id="scene-roast-result" class="scene liquid-glass hidden" style="padding:0;position:relative;overflow:hidden;max-width:780px;width:100%;display:flex;flex-direction:column;max-height:92vh;">
     <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#ff79df,var(--c-gold),var(--c-accent));"></div>
     <div style="display:flex;align-items:center;gap:12px;padding:18px 26px 12px;">
@@ -991,9 +989,9 @@
     </div>
   </div>
 
-  <!-- ============== ORACLE — Угадай число ============== -->
+  
 
-  <!-- Checklist (настройки сессии) -->
+  
   <div id="scene-oracle-checklist" class="scene hidden" style="max-width:580px;width:100%;">
     <div class="liquid-glass" style="padding:22px 26px;margin-bottom:10px;position:relative;overflow:hidden;">
       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#52ffb6,#65d0ff,var(--c-accent));"></div>
@@ -1006,7 +1004,7 @@
       <div class="font-display" style="font-size:22px;font-weight:700;margin-bottom:8px;" data-i18n="orHowTitle">Как работает</div>
       <div style="font-size:13px;color:var(--c-muted);line-height:1.6;margin-bottom:14px;" data-i18n="orHowDesc">1) Задаёшь вопрос (можно просто озвучить голосом). 2) Чат пишет свои ответы — число или слово. 3) Побеждает ближайший (число) или первый угадавший (слово). Можно играть несколько раундов — будет общий лидерборд.</div>
 
-      <!-- ТИП ОТВЕТА -->
+      
       <div class="glass2" style="padding:12px;margin-bottom:10px;">
         <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;" data-i18n="orAnswerType">Тип ответа</div>
         <select id="or-answer-type" onchange="Oracle.onTypeChange()" style="width:100%;padding:8px 11px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:var(--c-text);font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;outline:none;">
@@ -1081,7 +1079,7 @@
     <button onclick="Oracle.startSession()" class="btn-primary" style="width:100%;padding:17px;font-size:18px;" data-i18n="orStartSession">📊 НАЧАТЬ СЕССИЮ</button>
   </div>
 
-  <!-- Question setup (введи вопрос и ответ перед каждым раундом) -->
+  
   <div id="scene-oracle-question" class="scene liquid-glass hidden" style="max-width:540px;width:100%;padding:26px 28px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
       <button onclick="Oracle.goHome()" style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);display:flex;align-items:center;justify-content:center;">
@@ -1111,7 +1109,7 @@
     <button onclick="Oracle.startRound()" class="btn-primary" style="width:100%;padding:14px;font-size:15px;" data-i18n="orStartRoundBtn">▶ ЗАПУСТИТЬ РАУНД</button>
   </div>
 
-  <!-- Game (идёт сбор чисел) -->
+  
   <div id="scene-oracle-game" class="scene hidden" style="max-width:880px;width:100%;">
     <div class="liquid-glass" style="padding:18px 22px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:14px;">
       <div style="flex:1;min-width:0;">
@@ -1156,7 +1154,7 @@
     </div>
   </div>
 
-  <!-- Postfact — стример вводит ответ после раунда -->
+  
   <div id="scene-oracle-postfact" class="scene liquid-glass hidden" style="max-width:520px;width:100%;padding:28px 30px;text-align:center;">
     <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.14em;margin-bottom:6px;" data-i18n="orPostfactTitle">Раунд завершён</div>
     <div class="font-display grad-text" style="font-size:26px;font-weight:700;margin-bottom:14px;" data-i18n="orPostfactAsk">Какой правильный ответ?</div>
@@ -1166,7 +1164,7 @@
     <button onclick="Oracle.submitPostfact()" class="btn-primary" style="width:100%;padding:14px;font-size:15px;" data-i18n="orPostfactBtn">📊 ПОКАЗАТЬ РЕЗУЛЬТАТ</button>
   </div>
 
-  <!-- Result -->
+  
   <div id="scene-oracle-result" class="scene liquid-glass hidden" style="padding:0;position:relative;overflow:hidden;max-width:760px;width:100%;display:flex;flex-direction:column;max-height:92vh;">
     <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#52ffb6,#65d0ff,var(--c-accent));"></div>
     <div style="display:flex;align-items:center;gap:12px;padding:18px 26px 4px;">
@@ -1176,27 +1174,27 @@
       <div id="or-result-head" style="flex:1;min-width:0;"></div>
     </div>
     <div style="padding:6px 26px 26px;overflow-y:auto;">
-      <!-- Правильный ответ -->
+      
       <div class="glass2" style="padding:14px 18px;margin-bottom:12px;text-align:center;background:rgba(82,255,182,0.06);border-color:rgba(82,255,182,0.3);">
         <div style="font-size:10px;color:var(--c-green);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;" data-i18n="orRightAnswer">Правильный ответ</div>
         <div id="or-result-correct" class="font-display" style="font-size:36px;font-weight:700;color:var(--c-green);line-height:1;">—</div>
       </div>
-      <!-- Победитель -->
+      
       <div id="or-winner-box" style="background:linear-gradient(135deg,rgba(82,255,182,0.14),rgba(101,208,255,0.1));border:1px solid rgba(82,255,182,0.35);border-radius:18px;padding:22px 22px;text-align:center;margin-bottom:14px;"></div>
-      <!-- График распределения (только для чисел) -->
+      
       <div id="or-dist-wrap" class="glass2" style="padding:14px;margin-bottom:14px;">
         <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;" data-i18n="orDistribution">Распределение ответов</div>
         <svg id="or-dist-svg" viewBox="0 0 600 100" style="width:100%;height:auto;display:block;"></svg>
       </div>
-      <!-- Статы (всегда) -->
+      
       <div id="or-result-stats" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px;text-align:center;"></div>
-      <!-- Топ / частота слов -->
+      
       <div id="or-result-top" style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px;"></div>
       <button id="or-next-btn" onclick="Oracle.nextRound()" class="btn-primary" style="width:100%;padding:14px;font-size:15px;">→ СЛЕДУЮЩИЙ РАУНД</button>
     </div>
   </div>
 
-  <!-- Leaderboard (после всех раундов) -->
+  
   <div id="scene-oracle-leaderboard" class="scene liquid-glass hidden" style="padding:0;position:relative;overflow:hidden;max-width:680px;width:100%;display:flex;flex-direction:column;max-height:92vh;">
     <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#ffd470,#52ffb6,var(--c-accent));"></div>
     <div style="display:flex;align-items:center;gap:12px;padding:18px 26px 8px;">
@@ -1215,7 +1213,7 @@
     </div>
   </div>
 
-  <!-- ============== ROULETTEE — рафл с рулеткой ============== -->
+  
   <div id="scene-roulette" class="scene hidden" style="max-width:1240px;width:100%;position:relative;">
 
     <div class="rf-topbar">
@@ -1239,13 +1237,13 @@
     </div>
 
     <div class="rf-grid">
-      <div class="liquid-glass" style="padding:16px;display:flex;flex-direction:column;gap:10px;min-height:430px;max-height:66vh;overflow-y:auto;">
+      <div class="liquid-glass" style="padding:16px;display:flex;flex-direction:column;gap:10px;height:clamp(440px,60vh,580px);overflow-y:auto;">
         <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.1em;" data-i18n="rfWinnersFeed">🏆 Победители</div>
         <div id="rf-verify-note" style="display:none;font-size:11px;color:var(--c-gold);background:rgba(255,212,112,0.08);border:1px solid rgba(255,212,112,0.3);border-radius:9px;padding:8px 11px;"></div>
         <div id="rf-winners-feed" style="display:flex;flex-direction:column;gap:10px;"></div>
       </div>
 
-      <div class="liquid-glass" style="padding:22px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;">
+      <div class="liquid-glass" style="padding:22px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;height:clamp(440px,60vh,580px);">
         <div style="display:flex;align-items:center;gap:8px;">
           <span id="rf-status-dot" class="rf-status-dot"></span>
           <span style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.1em;" data-i18n="rfControl">Управление</span>
@@ -1256,7 +1254,7 @@
         <button onclick="Raffle.restartRaffle()" class="btn-ghost" style="width:100%;padding:11px;font-size:13px;color:var(--c-gold);border-color:rgba(255,212,112,0.3);" data-i18n="rfRestartBtn">♻️ Рестарт рафла</button>
       </div>
 
-      <div class="liquid-glass" style="padding:0;display:flex;flex-direction:column;overflow:hidden;min-height:430px;max-height:66vh;">
+      <div class="liquid-glass" style="padding:0;display:flex;flex-direction:column;overflow:hidden;height:clamp(440px,60vh,580px);">
         <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;">
           <span style="font-family:'Clash Display',sans-serif;font-weight:600;font-size:13px;"><span data-i18n="rfEntrants">Участники</span>: <span id="rf-entrants-count" class="grad-text">0</span></span>
           <span id="rf-entrants-more" style="font-size:10px;color:var(--c-muted);"></span>
@@ -1270,6 +1268,7 @@
         <div class="rf-spin-pointer"></div>
         <div id="rf-spin-track" class="rf-spin-track"></div>
       </div>
+      <div id="rf-elim-board" class="rf-elim-board" style="display:none;"></div>
     </div>
 
     <div id="rf-settings-panel" class="liquid-glass rf-modal" style="display:none;">
@@ -1344,7 +1343,6 @@
 
 </div>
 
-<!-- RULES -->
 <div id="rules-modal" class="modal-overlay hidden" onclick="app.closeRules()">
   <div class="liquid-glass modal-box" style="padding:30px;max-width:440px;width:100%;margin:16px;max-height:88vh;overflow-y:auto;" onclick="event.stopPropagation()">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;"><div class="font-display grad-text" style="font-size:22px;font-weight:700;" data-i18n="rulesTitle">📖 Как играть</div><button onclick="app.closeRules()" style="width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);font-size:18px;">✕</button></div>
@@ -1353,7 +1351,6 @@
   </div>
 </div>
 
-<!-- FAQ -->
 <div id="faq-modal" class="modal-overlay hidden" onclick="app.closeFaq()">
   <div class="liquid-glass modal-box" style="padding:30px;max-width:460px;width:100%;margin:16px;max-height:88vh;overflow-y:auto;" onclick="event.stopPropagation()">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;"><div class="font-display grad-text" style="font-size:22px;font-weight:700;">❓ FAQ</div><button onclick="app.closeFaq()" style="width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);font-size:18px;">✕</button></div>

@@ -127,7 +127,7 @@ window.app = {
         const nm = document.getElementById('ms-channel-name'); if (nm) nm.innerText = ch;
         UI.switchScene('mode-select');
         Emotes.load(ch);
-        // Roast собирает чат с момента подключения (даже если стример выберет другой режим)
+
         if (window.Roast) Roast.beginCollecting();
         this.client = new tmi.Client({ connection: { reconnect: true, secure: true, maxReconnectAttempts: Infinity, reconnectInterval: 2000 }, channels: [ch] });
         this.client.connect().catch(e => { alert(t('errConnecting') + e); UI.switchScene('login'); });
@@ -143,7 +143,7 @@ window.app = {
         Sound.click();
         this.selectedMode = mode;
         if (mode === 'chatgoose') {
-            // подтянуть актуальные настройки (на случай если открывали настройки на mode-select)
+
             Settings.read();
             document.getElementById('users-target').innerText = '/' + this.config.needed;
             UI.switchScene('warning-pre');
@@ -190,7 +190,6 @@ window.app = {
             const url = extractUrl(m);
             Words.harvest(m);
 
-            // Прокидываем сообщение в LastCall, Roast, Oracle (если активны)
             if (window.LastCall && LastCall.isActive) LastCall.onMessage(name, m, tags);
             if (window.Roast    && Roast.isCollecting) Roast.onMessage(name, m, tags);
             if (window.Oracle   && Oracle.isCollecting) Oracle.onMessage(name, m, tags);
@@ -230,8 +229,7 @@ window.app = {
 
     proceedToLoading() {
         Sound.click();
-        // сброс данных перед стартом CHATGOOSE: Roast мог накопить юзеров в app.users
-        // в фоне — для CHATGOOSE начинаем чистый отсчёт
+
         this.users.clear();
         this.allMessages = [];
         this._collectingMessages = true;
@@ -246,7 +244,6 @@ window.app = {
         const text = document.getElementById('live-text');
         if (!badge || !dot || !text) return;
 
-        // Reset to offline state
         badge.style.background = 'rgba(255,80,80,0.1)';
         badge.style.borderColor = 'rgba(255,80,80,0.3)';
         dot.style.background = 'var(--c-red)';
@@ -255,7 +252,6 @@ window.app = {
         text.style.color = 'var(--c-red)';
         text.textContent = 'Offline';
 
-        // Try to check via Twitch stream status (no auth needed for public data)
         fetch(`https://decapi.me/twitch/uptime/${encodeURIComponent(channel)}`)
             .then(r => r.text())
             .then(body => {
@@ -271,7 +267,7 @@ window.app = {
                 }
             })
             .catch(() => {
-                // If fetch fails, keep Offline — no change needed
+
             });
     },
 
@@ -298,7 +294,7 @@ window.app = {
     },
 
     goBack() {
-        // Если сейчас warning-pre или loading — вернуться на mode-select, сохранив коннект
+
         const onWarning = !document.getElementById('scene-warning-pre').classList.contains('hidden');
         const onLoading = !document.getElementById('scene-loading').classList.contains('hidden');
         if ((onWarning || onLoading) && this.client) {
@@ -322,7 +318,7 @@ window.app = {
             Sound.click();
             return;
         }
-        // Иначе — полный сброс на login
+
         this._clearAllTimers();
         this.state.active = false;
         try { if (this.client) { this.client.disconnect(); this.client = null; } } catch(e) {}
@@ -515,8 +511,7 @@ window.app = {
         const gc = document.getElementById('game-card'); gc.style.animation = 'none'; void gc.offsetWidth; gc.style.animation = 'scaleIn .35s cubic-bezier(0.16,1,0.3,1)';
 
         let modes = this.getModeList();
-        // Все режимы должны работать с конкретным target-юзером, а не подменять автора.
-        // Иначе один юзер случайно становится "героем" нескольких раундов.
+
         const targetHasUrl = !!(target.user?.urls?.length) || this.allMessages.some(m => m.name === target.name && m.url);
         if (!targetHasUrl) modes = modes.filter(m => m !== 'MEDIA');
         if (this.config.linksOnly) modes = modes.filter(m => !['EMOTE_OR_WORD','GUESS_7TV','FIRST_WORD','CENSORED','TRUE_FALSE','EMOJI_CHAIN'].includes(m));
@@ -530,15 +525,15 @@ window.app = {
 
         if (this._emoteOrWordUsed) modes = modes.filter(m => m !== 'EMOTE_OR_WORD');
         if (Emotes.map.size === 0) modes = modes.filter(m => m !== 'EMOTE_OR_WORD');
-        // 7TV — только если у target в сообщении есть 7TV эмоут (иначе режим бы взял чужого юзера)
+
         const targetHas7tv = Emotes.set7tv.size >= 5 && target.text.split(/\s+/).some(w => Emotes.is7tv(w));
         if (!targetHas7tv) modes = modes.filter(m => m !== 'GUESS_7TV');
-        // EMOJI_CHAIN — только если у target в сообщении есть эмодзи
+
         const targetHasEmoji = /\p{Emoji}/u.test(target.text) && target.text.replace(/\p{Emoji}/gu,'').trim().length > 1;
         if (!targetHasEmoji) modes = modes.filter(m => m !== 'EMOJI_CHAIN');
-        // SPEEDRACE — нужно 2+ сообщений у разных юзеров (для сравнения времени)
+
         if (this.allMessages.length < 4) modes = modes.filter(m => m !== 'SPEEDRACE');
-        // CAPSCHECK — нужны 4+ юзера
+
         if (this.users.size < 4) modes = modes.filter(m => m !== 'CAPSCHECK');
 
         if (this._quizzedAuthors.has(target.name) || this._authorQuestionTexts.has(target.text) || this._revealedTexts.has(target.text)) {
@@ -546,8 +541,6 @@ window.app = {
             if (f.length) modes = f;
         }
 
-        // ЛИМИТ РАУНДОВ НА ТЕМУ: если задан максимум и тема его выбрала — исключаем.
-        // Если после фильтра пусто — лимиты игнорируем (приоритет: каждый участник играет).
         if (!this._modePlayCount) this._modePlayCount = {};
         const slugByMode = { CLASSIC:'classic', TRUE_FALSE:'tf', CENSORED:'censor', WHOSE_MSG:'tf2', MOD_VS_VIEWER:'modview', MEDIA:'media', EMOTE_OR_WORD:'emote', DETECTIVE:'detective', FIRST_WORD:'firstword', TWO_OF_FOUR:'2of4', GUESS_7TV:'7tv', EMOJI_CHAIN:'emoji-chain', CAPSCHECK:'capscheck', SPEEDRACE:'speedrace' };
         const maxR = this.config.modeMaxRounds || {};
@@ -559,7 +552,6 @@ window.app = {
 
         if (!modes.length) modes = ['CLASSIC'];
 
-        // ВЗВЕШЕННЫЙ ВЫБОР по процентам из настроек (fallback: равные веса)
         const weights = this.config.modeWeights || {};
         const pool = modes.map(m => ({ m, w: Math.max(1, weights[slugByMode[m]] || 1) }));
         const totalW = pool.reduce((s, p) => s + p.w, 0);

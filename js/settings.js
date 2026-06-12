@@ -1,14 +1,12 @@
 const Settings = {
     MIDS: ['classic','tf','censor','tf2','modview','media','emote','detective','firstword','2of4','7tv','emoji-chain','capscheck','speedrace'],
-    // Базовые доли «больших» тем. Остальные активные делят остаток поровну.
+
     CORE_WEIGHTS: { classic: 25, tf: 20, censor: 20 },
 
     _activeMids() {
         return this.MIDS.filter(m => document.getElementById('mode-' + m)?.checked);
     },
 
-    // Умная автоподстановка процентов: classic/tf/censor получают свои доли,
-    // прочие активные делят остаток поровну. Сумма всегда ровно 100.
     autoWeights(fromButton) {
         const act = this._activeMids();
         if (!act.length) return;
@@ -19,7 +17,7 @@ const Settings = {
         coreActive.forEach(m => { w[m] = this.CORE_WEIGHTS[m]; coreSum += w[m]; });
         let rest = 100 - coreSum;
         if (!others.length) {
-            // только core-темы: масштабируем их до 100
+
             coreActive.forEach(m => { w[m] = Math.round(w[m] * 100 / coreSum); });
         } else {
             const per = Math.max(1, Math.floor(rest / others.length));
@@ -31,7 +29,6 @@ const Settings = {
         if (fromButton) { this.read(); Sound.click(); }
     },
 
-    // корректируем сумму до ровно 100 на самом «тяжёлом» режиме
     _fixSumTo100(w, act) {
         let sum = act.reduce((s, m) => s + (w[m] || 0), 0);
         if (sum !== 100 && act.length) {
@@ -40,7 +37,6 @@ const Settings = {
         }
     },
 
-    // Ручная правка одного процента: фиксируем его, остальные масштабируем пропорционально.
     onWeightEdit(changed) {
         const act = this._activeMids();
         const chEl = document.getElementById('mw-' + changed);
@@ -68,7 +64,7 @@ const Settings = {
     },
 
     onModeToggle() {
-        // изменился состав активных тем — пересчитываем проценты с нуля
+
         this.autoWeights(false);
         this.read();
     },
@@ -102,14 +98,14 @@ const Settings = {
         cfg.linksOnly = lo ? lo.value === 'links' : false;
         cfg.activeModes = this._activeMids();
         if (!cfg.activeModes.length) cfg.activeModes = ['classic'];
-        // веса и лимиты раундов по темам
+
         cfg.modeWeights = {};
         cfg.modeMaxRounds = {};
         this.MIDS.forEach(m => {
             const w = parseInt(document.getElementById('mw-' + m)?.value);
             if (isFinite(w) && w > 0) cfg.modeWeights[m] = w;
             const r = parseInt(document.getElementById('mr-' + m)?.value);
-            cfg.modeMaxRounds[m] = (isFinite(r) && r > 0) ? r : 0; // 0 = без лимита
+            cfg.modeMaxRounds[m] = (isFinite(r) && r > 0) ? r : 0;
         });
         this.save();
     },
@@ -177,7 +173,7 @@ const Settings = {
         if (s.activeModes?.length) {
             this.MIDS.forEach(m => { const el = document.getElementById('mode-' + m); if (el) el.checked = s.activeModes.includes(m); });
         }
-        // веса: из storage или авто
+
         if (s.modeWeights && Object.keys(s.modeWeights).length) {
             this.MIDS.forEach(m => {
                 const el = document.getElementById('mw-' + m);

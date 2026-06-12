@@ -86,7 +86,7 @@ const UI = {
     },
 
     switchScene(id) {
-        // hide/show loading sub-components
+
         const loadingComps = document.querySelectorAll('.scene-loading-comp');
         loadingComps.forEach(el => el.classList.toggle('hidden', id !== 'loading'));
 

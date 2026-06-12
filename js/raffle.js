@@ -4,6 +4,7 @@ const Raffle = {
     firstSeen: new Map(),
     msgCount: new Map(),
     winners: [],
+    history: [],
     title: '',
     openedAt: 0,
     config: {
@@ -97,7 +98,8 @@ const Raffle = {
                 entrants: [...this.entrants.entries()].slice(0, 5000),
                 firstSeen: [...this.firstSeen.entries()].slice(-5000),
                 msgCount: [...this.msgCount.entries()].slice(-5000),
-                winners: this.winners.slice(0, 20)
+                winners: this.winners.slice(0, 20),
+                history: this.history.slice(0, 20)
             });
         } catch (e) { console.warn('raffle persist fail', e); }
     },
@@ -113,6 +115,7 @@ const Raffle = {
         this.firstSeen = new Map(s.firstSeen || []);
         this.msgCount = new Map(s.msgCount || []);
         this.winners = s.winners || [];
+        this.history = s.history || (s.winners || []).slice();
         return true;
     },
 
@@ -186,9 +189,11 @@ const Raffle = {
         if (!confirm(t('rfConfirmRestart') || 'Очистить всех участников и начать заново?')) return;
         Sound.click();
         this.entrants = new Map();
+        this.winners = [];
         this.openedAt = this.isOpen ? Date.now() : 0;
+        if (this._winnerTimerIv) { clearInterval(this._winnerTimerIv); this._winnerTimerIv = null; }
         this._renderEntrants(true);
-        this._hideWinnerCard();
+        this._renderWinners();
         this._persist();
     },
 
@@ -216,10 +221,14 @@ const Raffle = {
         if (!this.firstSeen.has(name)) this.firstSeen.set(name, now);
         this.msgCount.set(name, (this.msgCount.get(name) || 0) + 1);
 
-        if (this.winners.length && this.winners[0].name === name && !this.winners[0].msg) {
-            this.winners[0].msg = text.slice(0, 140);
-            this._renderWinners();
-            this._saveSoon();
+        if (this.winners.length && this.winners[0].name === name) {
+            const w0 = this.winners[0];
+            if (!w0.msgs) w0.msgs = [];
+            if (w0.msgs.length < 5) {
+                w0.msgs.push({ text: text.slice(0, 140), at: now });
+                this._renderWinners();
+                this._saveSoon();
+            }
         }
 
         if (this.entrants.has(name)) {
@@ -320,6 +329,7 @@ const Raffle = {
     _forceCloseOverlay() {
         const ov = document.getElementById('rf-spin-overlay');
         if (ov) ov.classList.remove('rf-spin-show');
+        if (this._elimSafety) { clearTimeout(this._elimSafety); this._elimSafety = null; }
         if (this._spinTickIv) { clearInterval(this._spinTickIv); this._spinTickIv = null; }
         this._spinning = false;
     },
@@ -329,6 +339,10 @@ const Raffle = {
         const overlay = document.getElementById('rf-spin-overlay');
         const track = document.getElementById('rf-spin-track');
         if (!overlay || !track) { this._spinning = false; this._instantWinner(winner); return; }
+        const board0 = document.getElementById('rf-elim-board');
+        if (board0) board0.style.display = 'none';
+        const wnd0 = document.getElementById('rf-spin-window');
+        if (wnd0) wnd0.style.display = 'block';
         overlay.classList.add('rf-spin-show');
 
         const CARD = 148, GAP = 10, STEP = CARD + GAP;
@@ -385,38 +399,99 @@ const Raffle = {
     _runElimination(pool, winner) {
         this._spinning = true;
         const overlay = document.getElementById('rf-spin-overlay');
-        const track = document.getElementById('rf-spin-track');
-        if (!overlay || !track) { this._spinning = false; this._instantWinner(winner); return; }
+        const board = document.getElementById('rf-elim-board');
+        const wnd = document.getElementById('rf-spin-window');
+        if (!overlay || !board) { this._spinning = false; this._instantWinner(winner); return; }
+        if (wnd) wnd.style.display = 'none';
+        board.style.display = 'grid';
         overlay.classList.add('rf-spin-show');
-        track.style.transition = 'none';
-        track.style.transform = 'translateX(0)';
-        const names = pool.map(([n]) => n).filter(n => n !== winner);
+
+        let names = pool.map(([n]) => n).filter(n => n !== winner);
         for (let i = names.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [names[i], names[j]] = [names[j], names[i]]; }
-        const seq = names.slice(0, Math.min(18, names.length)).concat([winner]);
-        let i = 0;
-        const showNext = () => {
-            if (!this._spinning) return;
-            if (i >= seq.length) {
-                setTimeout(() => {
-                    this._forceCloseOverlay();
-                    this._finishWinner(winner);
-                }, 900);
-                return;
-            }
-            const n = seq[i];
+        const MAX = 30;
+        const shown = names.slice(0, MAX - 1).concat([winner]);
+        for (let i = shown.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [shown[i], shown[j]] = [shown[j], shown[i]]; }
+
+        const note = pool.length > MAX ? `<div class="rf-elim-note">${shown.length} ${t('rfElimOf') || 'финалистов из'} ${pool.length}</div>` : '';
+        board.innerHTML = note + shown.map(n => {
             const e = this.entrants.get(n) || { color: '#9ca3af' };
-            const last = i === seq.length - 1;
-            track.innerHTML = `<div class="rf-elim-card ${last ? 'rf-card-win' : ''}" style="border-color:${e.color}66;">
-                ${this._avatarHtml(n, e.color, 80)}
-                <div class="rf-card-name" style="color:${e.color};font-size:21px;">${n}</div>
-                ${last ? '' : `<div class="rf-elim-out">${t('rfEliminated') || 'выбыл'}</div>`}
+            return `<div class="rf-elim-cell" data-name="${n}" style="border-color:${e.color}55;">
+                ${this._avatarHtml(n, e.color, 40)}
+                <div class="rf-elim-cell-name" style="color:${e.color}">${n}</div>
             </div>`;
-            if (this.config.sound) (last ? Sound.go() : Sound.tick());
-            i++;
-            setTimeout(showNext, last ? 600 : Math.max(90, 90 + (i / seq.length) * 360));
+        }).join('');
+
+        const cells = {};
+        board.querySelectorAll('.rf-elim-cell').forEach(c => cells[c.dataset.name] = c);
+        const order = shown.filter(n => n !== winner);
+        for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+
+        const killOne = (n, dramatic) => {
+            const c = cells[n];
+            if (!c) return;
+            c.classList.add('rf-elim-dead');
+            if (this.config.sound) (dramatic ? Sound.wrong() : Sound.tick());
         };
-        showNext();
-        setTimeout(() => { if (this._spinning) { this._forceCloseOverlay(); this._finishWinner(winner); } }, 14000);
+
+        let i = 0;
+        const total = order.length;
+        const step = () => {
+            if (!this._spinning) return;
+            const left = total - i;
+            if (left <= 1) { this._elimDuel(cells, order[total - 1], winner); return; }
+            killOne(order[i], left <= 4);
+            i++;
+            const prog = i / total;
+            let delay;
+            if (left - 1 <= 3) delay = 650 + (4 - (left - 1)) * 220;
+            else delay = Math.max(110, 520 - prog * 460);
+            setTimeout(step, delay);
+        };
+        setTimeout(step, total > 0 ? 700 : 60);
+        this._elimSafety = setTimeout(() => { if (this._spinning) { this._forceCloseOverlay(); this._finishWinner(winner); } }, 38000);
+    },
+
+    _elimDuel(cells, loser, winner) {
+        if (!this._spinning) return;
+        if (!loser) { this._elimChamp(cells, winner); return; }
+        const a = cells[loser], b = cells[winner];
+        if (a) a.classList.add('rf-elim-duelist');
+        if (b) b.classList.add('rf-elim-duelist');
+        const pair = [b, a];
+        let hop = 0;
+        const hops = 7;
+        const flip = () => {
+            if (!this._spinning) return;
+            pair.forEach(c => c && c.classList.remove('rf-elim-focus'));
+            const cur = pair[hop % 2];
+            if (cur) cur.classList.add('rf-elim-focus');
+            if (this.config.sound) Sound.tick();
+            hop++;
+            if (hop <= hops) setTimeout(flip, 200 + Math.pow(hop / hops, 2) * 520);
+            else setTimeout(() => {
+                if (!this._spinning) return;
+                pair.forEach(c => c && c.classList.remove('rf-elim-focus'));
+                if (a) { a.classList.add('rf-elim-dead'); if (this.config.sound) Sound.wrong(); }
+                setTimeout(() => this._elimChamp(cells, winner), 650);
+            }, 480);
+        };
+        flip();
+    },
+
+    _elimChamp(cells, winner) {
+        if (!this._spinning) return;
+        const c = cells[winner];
+        if (c) {
+            c.classList.remove('rf-elim-duelist', 'rf-elim-focus');
+            c.classList.add('rf-elim-champ');
+        }
+        if (this.config.sound) Sound.go();
+        confetti({ particleCount: 70, spread: 80, origin: { y: .4 }, colors: ['#ffd470', '#ff79df', '#8b7dff'] });
+        setTimeout(() => {
+            if (this._elimSafety) { clearTimeout(this._elimSafety); this._elimSafety = null; }
+            this._forceCloseOverlay();
+            this._finishWinner(winner);
+        }, 1500);
     },
 
     _instantWinner(winner) {
@@ -432,11 +507,13 @@ const Raffle = {
 
         const rec = {
             name: winner, color: e.color, badges: e.badges, tickets: e.tickets,
-            at: Date.now(), msg: '', accountAge: '…', followAge: '…',
+            at: Date.now(), msgs: [], accountAge: '…', followAge: '…',
             channel: app._connectedChannel || ''
         };
         this.winners.unshift(rec);
         this.winners = this.winners.slice(0, 20);
+        this.history.unshift(rec);
+        this.history = this.history.slice(0, 20);
 
         if (this.config.removeWinner) this.entrants.delete(winner);
         this._renderEntrants(true);
@@ -445,6 +522,14 @@ const Raffle = {
         this._persist();
         this._fetchWinnerInfo(rec);
         if (this.config.requireFollow || this.config.minFollowDays > 0) this._verifyFollow(rec);
+    },
+
+    _fmtDelta(ms) {
+        const sec = Math.max(0, Math.floor(ms / 1000));
+        if (sec < 60) return sec + (t('rfSecShort') || 'с');
+        const m = Math.floor(sec / 60);
+        if (m < 60) return m + (t('rfMinShort') || 'м') + ' ' + (sec % 60) + (t('rfSecShort') || 'с');
+        return Math.floor(m / 60) + (t('rfHrShort') || 'ч') + ' ' + (m % 60) + (t('rfMinShort') || 'м');
     },
 
     _fmtAgo(iso) {
@@ -533,7 +618,7 @@ const Raffle = {
                     <span>📅 ${t('rfAccAge') || 'Аккаунту'}: <b>${w.accountAge}</b></span>
                     <span>💜 ${t('rfFollow') || 'Фоллов'}: <b>${w.followAge}</b></span>
                 </div>` : ''}
-                ${w.msg ? `<div class="rf-winner-msg" style="border-left-color:${w.color}66;"><span style="color:${w.color};font-weight:700;">${w.name}:</span> ${Emotes.parse(w.msg)}</div>` : (first ? `<div class="rf-winner-msg rf-winner-msg-wait">${t('rfWaitingMsg') || 'Ждём сообщение победителя…'}</div>` : '')}
+                ${(w.msgs && w.msgs.length) ? w.msgs.map(m => `<div class="rf-winner-msg" style="border-left-color:${w.color}66;"><span style="color:${w.color};font-weight:700;">${w.name}:</span> ${Emotes.parse(m.text)}<div class="rf-winner-msg-time">⏱ ${t('rfRepliedIn') || 'через'} ${this._fmtDelta(m.at - w.at)}</div></div>`).join('') : (first ? `<div class="rf-winner-msg rf-winner-msg-wait">${t('rfWaitingMsg') || 'Ждём сообщение победителя…'}</div>` : '')}
             </div>`;
         }).join('');
         if (this.winners.length) this._startWinnerTimer();
@@ -548,7 +633,7 @@ const Raffle = {
         if (show) {
             const lst = document.getElementById('rf-history-list');
             if (lst) {
-                lst.innerHTML = this.winners.length ? this.winners.map((w, i) => `
+                lst.innerHTML = this.history.length ? this.history.map((w, i) => `
                     <div class="rf-hist-row">
                       <div class="lc-podium-rank ${i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : 'rN'}">${i + 1}</div>
                       <span class="rf-entrant-name" style="color:${w.color};flex:1;">${w.badges || ''} ${w.name}</span>
@@ -560,6 +645,7 @@ const Raffle = {
 
     clearHistory() {
         if (!confirm(t('rfConfirmClearHist') || 'Очистить историю победителей?')) return;
+        this.history = [];
         this.winners = [];
         this._renderWinners();
         this.toggleHistory(); this.toggleHistory();

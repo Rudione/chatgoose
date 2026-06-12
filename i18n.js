@@ -213,7 +213,6 @@ const I18N = {
         rankMsg: ['Только знакомишься', 'Ещё учишься', 'Неплохо знаешь чат', 'ЗНАЕШЬ СВОИХ', 'БОГ ЧАТА'],
         rankEmoji: ['🌱', '🤔', '😎', '🔥', '👑'],
 
-        
         modeSelectKicker: 'Выбери активность',
         modeSelectTitle: 'Что будем играть?',
         msChatgooseSub: 'Классический квиз',
@@ -228,7 +227,6 @@ const I18N = {
         msTagNew: 'NEW',
         msPlayBtn: 'Играть',
 
-        
         modeCapscheck: '🎯 КАПС или обычно?',
         modeCapscheckDesc: 'Регистр сообщения',
         modeSpeedrace: '⚡ Кто быстрее?',
@@ -242,7 +240,6 @@ const I18N = {
         speedRaceQ: 'Какое сообщение появилось в чате РАНЬШЕ?',
         speedFirst: '— написал первым',
 
-        
         lcTitle: '⏳ Last Call · Последний написавший',
         lcHowTitle: 'Как работает',
         lcHowDesc: 'Запускаешь таймер. Чат пишет сообщения. Когда время вышло, побеждает тот, кто написал ПОСЛЕДНИМ. Идеально для розыгрышей и движухи в чате.',
@@ -277,7 +274,6 @@ const I18N = {
         lcWroteAt: 'Написал на ',
         lcParticipants: 'участников',
 
-        
         roastTitle: '🔮 Chat Roast AI · Психоанализ чата',
         roastHowTitle: 'Как работает',
         roastHowDesc: '1) Игра собирает сообщения чата за N минут. 2) AI анализирует и навешивает на юзеров характеристики: кто сегодня душнила, кто красавчик, кто загадка дня. 3) Стример видит характеристику с цитатой и угадывает кого из чата ИИ имел в виду.',
@@ -331,7 +327,6 @@ const I18N = {
         roastNeedUsers: 'Нужно минимум 2 разных юзера в чате для анализа.',
         roastAIError: 'Ошибка AI: ',
 
-        
         roastProvider: '🧠 AI-провайдер',
         roastProvFree: 'бесплатно',
         roastProvCustom: 'свой',
@@ -433,6 +428,11 @@ const I18N = {
         rfYrs: ' г.',
         rfMos: ' мес.',
         rfDays: ' дн.',
+        rfSecShort: 'с',
+        rfMinShort: 'м',
+        rfHrShort: 'ч',
+        rfRepliedIn: 'через',
+        rfElimOf: 'финалистов из',
         msExtraModes: 'Дополнительные режимы',
         modeColMode: 'Режим',
         modeColWeight: '% шанс',
@@ -440,13 +440,11 @@ const I18N = {
         modeAutoBtn: '↻ Авто',
         modeWeightsHint: 'Сумма всегда 100%. «Раундов» — макс. раз тема выпадет за игру (пусто = без лимита).',
 
-        
         lcResetMode: '⚡ Сбрасывать таймер на каждое сообщение',
         lcResetModeDesc: 'Победитель — последний написавший, если за X сек никто не ответил',
         lcResetBadge: 'RESET MODE',
         lcResetRunning: '⚡ Таймер сбрасывается на каждое сообщение',
 
-        
         orTitle: '📊 Oracle · Угадай число',
         orHowTitle: 'Как работает',
         orHowDesc: '1) Задаёшь вопрос с числовым ответом: «сколько кругов я наберу?», «сколько мне лет?», «какой будет счёт?». 2) Чат пишет свои числа. 3) Побеждает тот, кто ближе всех к правильному ответу. Можно играть несколько раундов подряд — будет общий лидерборд.',
@@ -457,7 +455,7 @@ const I18N = {
         orScoringExact: 'Только точное попадание',
         orMin: 'Мин число',
         orMax: 'Макс число',
-        
+
         orAllowDecimals: 'Принимать дробные числа',
         orAllowDecimalsDesc: 'Например 3.14 или 12,5',
         orAllowNegative: 'Принимать отрицательные',
@@ -505,7 +503,6 @@ const I18N = {
         orNoQuestion: 'Введи вопрос',
         orNoCorrect: 'Введи правильный ответ (число)',
 
-        
         msTagResetMode: '+ reset-mode',
         msTagFree: 'бесплатно',
         msOracleSub: 'Угадай число',
@@ -842,7 +839,6 @@ const I18N = {
         roastNeedUsers: 'Need at least 2 different users in chat to analyze.',
         roastAIError: 'AI error: ',
 
-        
         roastProvider: '🧠 AI provider',
         roastProvFree: 'free',
         roastProvCustom: 'custom',
@@ -944,6 +940,11 @@ const I18N = {
         rfYrs: ' yr',
         rfMos: ' mo',
         rfDays: ' d',
+        rfSecShort: 's',
+        rfMinShort: 'm',
+        rfHrShort: 'h',
+        rfRepliedIn: 'in',
+        rfElimOf: 'finalists of',
         msExtraModes: 'Extra modes',
         modeColMode: 'Mode',
         modeColWeight: '% chance',
@@ -951,13 +952,11 @@ const I18N = {
         modeAutoBtn: '↻ Auto',
         modeWeightsHint: 'Always sums to 100%. "Rounds" = max times the mode appears per game (empty = no limit).',
 
-        
         lcResetMode: '⚡ Reset timer on each message',
         lcResetModeDesc: 'Winner = last writer if nobody answers within X sec',
         lcResetBadge: 'RESET MODE',
         lcResetRunning: '⚡ Timer resets on each message',
 
-        
         orTitle: '📊 Oracle · Guess the number',
         orHowTitle: 'How it works',
         orHowDesc: '1) Ask a question with a numeric answer: "how many laps will I score?", "how old am I?", "what will the score be?". 2) Chat writes numbers. 3) Closest to the right answer wins. You can play multiple rounds with a session leaderboard.',
@@ -968,7 +967,7 @@ const I18N = {
         orScoringExact: 'Exact match only',
         orMin: 'Min number',
         orMax: 'Max number',
-        
+
         orAllowDecimals: 'Accept decimals',
         orAllowDecimalsDesc: 'e.g. 3.14 or 12,5',
         orAllowNegative: 'Accept negatives',
@@ -1352,7 +1351,6 @@ const I18N = {
         roastNeedUsers: 'Потрібно мінімум 2 різних юзери в чаті.',
         roastAIError: 'Помилка AI: ',
 
-        
         roastProvider: '🧠 AI-провайдер',
         roastProvFree: 'безкоштовно',
         roastProvCustom: 'свій',
@@ -1409,7 +1407,6 @@ const I18N = {
         lcResetBadge: 'RESET MODE',
         lcResetRunning: '⚡ Таймер скидається на кожне повідомлення',
 
-        
         orTitle: '📊 Oracle · Вгадай число',
         orHowTitle: 'Як працює',
         orHowDesc: '1) Ставиш запитання з числовою відповіддю: «скільки кіл я наберу?», «скільки мені років?», «який буде рахунок?». 2) Чат пише свої числа. 3) Перемагає той, хто ближче всіх до правильної відповіді. Можна грати кілька раундів — буде загальний лідерборд.',
@@ -1420,7 +1417,7 @@ const I18N = {
         orScoringExact: 'Лише точне влучання',
         orMin: 'Мін число',
         orMax: 'Макс число',
-        
+
         orAllowDecimals: 'Приймати дробові',
         orAllowDecimalsDesc: 'Наприклад 3.14 або 12,5',
         orAllowNegative: 'Приймати від\'ємні',

@@ -1,17 +1,17 @@
-// 📊 ORACLE — мини-игра "Угадай число / слово"
-// Стример задаёт вопрос (необязательно — может в голосе), чат пишет ответы, побеждает ближайший/точный.
+
+
 const Oracle = {
     isActive: false,
     isCollecting: false,
     config: {
-        answerType: 'number',    // number | word
-        duration: 60,            // длительность раунда в секундах
-        access: 'all',           // all|sub|vip|follower
-        allowDecimals: true,     // (number) принимать дробные
-        allowNegative: false,    // (number) принимать отрицательные
-        firstOnly: true,         // 1 ответ от юзера (true=первый, false=последний)
-        roundsTotal: 1,          // запланировано раундов в сессии
-        scoring: 'closest',      // (number) closest | exact-only
+        answerType: 'number',
+        duration: 60,
+        access: 'all',
+        allowDecimals: true,
+        allowNegative: false,
+        firstOnly: true,
+        roundsTotal: 1,
+        scoring: 'closest',
         announcePostfact: false  // ответ вводится после раунда
     },
 
@@ -19,7 +19,6 @@ const Oracle = {
     round: null,
     _tickIv: null,
 
-    // ============== НАСТРОЙКИ ==============
     loadSettings() {
         const s = Storage.load('cg_oracle_settings');
         if (s) Object.assign(this.config, s);
@@ -51,7 +50,6 @@ const Oracle = {
         this.saveSettings();
     },
 
-    // переключение типа ответа меняет видимость настроек, специфичных для числа
     onTypeChange() {
         const at = document.getElementById('or-answer-type');
         if (at) this.config.answerType = at.value;
@@ -64,7 +62,6 @@ const Oracle = {
         document.querySelectorAll('.or-num-only').forEach(el => el.style.display = isNum ? '' : 'none');
     },
 
-    // ============== СЕССИЯ ==============
     startSession() {
         this.readSettings();
         this.session = { rounds: [], leaderboard: new Map(), idx: 0, channel: app._connectedChannel || '' };
@@ -79,10 +76,10 @@ const Oracle = {
         if (ri) ri.innerText = `${this.session.idx + 1} / ${this.config.roundsTotal}`;
         const q = document.getElementById('or-question-input'); if (q) q.value = '';
         const c = document.getElementById('or-correct-input'); if (c) c.value = '';
-        // постфактум скрывает поле правильного ответа
+
         const correctRow = document.getElementById('or-correct-row');
         if (correctRow) correctRow.style.display = this.config.announcePostfact ? 'none' : 'block';
-        // плейсхолдер и тип поля ответа
+
         const ci = document.getElementById('or-correct-input');
         if (ci) ci.placeholder = this.config.answerType === 'number' ? '42' : (t('orWordPlaceholder') || 'например: Скайрим');
         const qhint = document.getElementById('or-q-optional');
@@ -92,7 +89,7 @@ const Oracle = {
     startRound() {
         const q = (document.getElementById('or-question-input')?.value || '').trim();
         const cInp = (document.getElementById('or-correct-input')?.value || '').trim();
-        // вопрос НЕ обязателен (стример может озвучить голосом)
+
         let correct = null;
         if (!this.config.announcePostfact) {
             if (this.config.answerType === 'number') {
@@ -105,7 +102,7 @@ const Oracle = {
             }
         }
         this.round = {
-            question: q,                  // может быть пустым
+            question: q,
             correct,
             type: this.config.answerType,
             startedAt: Date.now(),
@@ -116,12 +113,12 @@ const Oracle = {
         this.isCollecting = true;
         this.isActive = true;
         UI.switchScene('oracle-game');
-        // если вопроса нет — показываем нейтральный заголовок
+
         const qEl = document.getElementById('or-game-question');
         if (qEl) qEl.innerText = q || (t('orNoQuestionPlaceholder') || '🎙 Вопрос в эфире');
         document.getElementById('or-game-round').innerText = `${this.session.idx + 1} / ${this.config.roundsTotal}`;
         document.getElementById('or-game-count').innerText = '0';
-        // подпись «угадай ...» по типу
+
         const gr = document.getElementById('or-game-running-label');
         if (gr) gr.innerText = this.config.answerType === 'number'
             ? (t('orGameRunning') || 'Чат пишет числа... 📊')
@@ -169,7 +166,7 @@ const Oracle = {
             if (value === null) return;
             display = this._fmt(value);
         } else {
-            // word: берём очищенное сообщение целиком (без эмоутов-обвязки), до 40 симв.
+
             const w = this._cleanWord(text);
             if (!w) return;
             value = w;
@@ -207,10 +204,10 @@ const Oracle = {
     },
 
     _cleanWord(text) {
-        // убираем ведущие/замыкающие пробелы; игнорим команды и сообщения-эмоуты
+
         let t2 = text.trim();
         if (!t2 || t2.startsWith('!')) return null;
-        // если сообщение только из эмоутов — пропускаем
+
         const words = t2.split(/\s+/);
         if (words.length && words.every(w => Emotes.isEmote && Emotes.isEmote(w))) return null;
         if (t2.length > 60) t2 = t2.slice(0, 60);
@@ -218,7 +215,7 @@ const Oracle = {
     },
 
     _norm(s) {
-        // нормализация для сравнения слов: lowercase, ё→е, убрать пунктуацию по краям и пробелы
+
         return String(s).toLowerCase().replace(/ё/g, 'е').replace(/[^\p{L}\p{N}]+/gu, ' ').trim().replace(/\s+/g, ' ');
     },
 
@@ -261,7 +258,7 @@ const Oracle = {
     _showResult() {
         UI.switchScene('oracle-result');
         const r = this.round;
-        // заголовок (вопрос может быть пустым)
+
         const head = document.getElementById('or-result-head');
         if (head) {
             head.innerHTML = r.question
@@ -271,7 +268,6 @@ const Oracle = {
         if (r.type === 'number') this._showNumberResult(r);
         else this._showWordResult(r);
 
-        // сохраняем раунд
         this.session.rounds.push({ question: r.question, correct: r.correct, type: r.type, total: r.entries.length });
         confetti({ particleCount: 100, spread: 90, origin: { y: .55 }, colors: ['#ff79df','#ffd470','#65d0ff','#8b7dff'] });
 
@@ -282,7 +278,6 @@ const Oracle = {
         }
     },
 
-    // ---------- ЧИСЛОВОЙ результат ----------
     _showNumberResult(r) {
         const ranked = r.entries.slice().map(e => ({ ...e, diff: Math.abs(e.value - r.correct) })).sort((a, b) => a.diff - b.diff);
         const winners = this.config.scoring === 'exact-only' ? ranked.filter(e => e.diff === 0) : ranked;
@@ -296,15 +291,12 @@ const Oracle = {
         document.getElementById('or-result-correct').innerText = this._fmt(r.correct);
         this._renderWinnerBox(winner, winner ? `${t('orAnswered') || 'Ответ:'} <b style="color:var(--c-text);font-family:'Clash Display',sans-serif;">${this._fmt(winner.value)}</b> · ${t('orDiff') || 'отклонение'} <b style="color:var(--c-gold);">${this._fmt(winner.diff)}</b>` : '');
 
-        // график распределения (только число)
         const distWrap = document.getElementById('or-dist-wrap');
         if (distWrap) distWrap.style.display = 'block';
         this._renderDistribution(nums, r.correct, winner?.value);
 
-        // топ-10
         this._renderTop(ranked, e => `<div class="or-podium-num">${this._fmt(e.value)}</div><div class="lc-podium-time">±${this._fmt(e.diff)}</div>`);
 
-        // статы
         const stats = document.getElementById('or-result-stats');
         if (stats) stats.innerHTML = nums.length ? `
             <div><div class="or-stat-l">${t('orParticipants') || 'участников'}</div><div class="font-display" style="font-size:18px;font-weight:700;">${nums.length}</div></div>
@@ -315,10 +307,9 @@ const Oracle = {
         this._updateSessionLeaderboardNumber(ranked);
     },
 
-    // ---------- СЛОВЕСНЫЙ результат ----------
     _showWordResult(r) {
         const correctNorm = this._norm(r.correct);
-        // правильные = те, чьё нормализованное значение совпадает с ответом
+
         const correctEntries = r.entries.filter(e => this._norm(e.value) === correctNorm).sort((a, b) => a.ts - b.ts);
         const winner = correctEntries[0] || null;
 
@@ -327,11 +318,9 @@ const Oracle = {
             ? `${t('orFirstToGuess') || 'Угадал первым из'} <b style="color:var(--c-text);">${correctEntries.length}</b> ${t('orWhoGuessed') || 'угадавших'}`
             : '');
 
-        // скрываем числовой график, показываем частоту ответов
         const distWrap = document.getElementById('or-dist-wrap');
         if (distWrap) distWrap.style.display = 'none';
 
-        // частотный список ответов
         const freq = {};
         r.entries.forEach(e => {
             const key = this._norm(e.value);
@@ -361,7 +350,6 @@ const Oracle = {
             }
         }
 
-        // статы для слов
         const stats = document.getElementById('or-result-stats');
         if (stats) stats.innerHTML = r.entries.length ? `
             <div><div class="or-stat-l">${t('orParticipants') || 'участников'}</div><div class="font-display" style="font-size:18px;font-weight:700;">${r.entries.length}</div></div>
@@ -471,7 +459,7 @@ const Oracle = {
     },
 
     _updateSessionLeaderboardWord(correctEntries) {
-        // в word-режиме: 100 за первое угадывание, 40 всем кто угадал
+
         correctEntries.forEach((e, idx) => {
             const lb = this.session.leaderboard.get(e.name) || { name: e.name, color: e.color, score: 0, hits: 0, exacts: 0 };
             lb.score += (idx === 0 ? 100 : 40);

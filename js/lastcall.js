@@ -1,25 +1,25 @@
-// LAST CALL — мини-игра "последний написавший побеждает"
+
 const LastCall = {
     isActive: false,
     config: {
-        duration: 60,           // секунд таймер
-        access: 'all',          // all|sub|vip|follower
-        antiBot: true,          // фильтр команд/коротких/только-эмоутов
-        minLen: 3,              // минимальная длина сообщения
-        oneEntry: false,        // 1 человек = 1 участие
-        keyword: '',            // если задано — учитываются только сообщения с этим словом
-        showTopN: 5,            // сколько мест показать в финале
-        cooldownSec: 0,         // через сколько после старта начинаем считать
+        duration: 60,
+        access: 'all',
+        antiBot: true,
+        minLen: 3,
+        oneEntry: false,
+        keyword: '',
+        showTopN: 5,
+        cooldownSec: 0,
         resetOnMessage: false   // ⚡ режим: таймер сбрасывается на каждое новое сообщение
     },
     state: null,
-    _msgRecent: [],   // последние N сообщений для ленты
+    _msgRecent: [],
     _tickIv: null,
 
     loadSettings() {
         const s = Storage.load('cg_lc_settings');
         if (s) Object.assign(this.config, s);
-        // в UI
+
         const d = document.getElementById('lc-duration-slider');
         if (d) { d.value = this.config.duration; document.getElementById('lc-duration-val').innerText = this.config.duration; }
         const a = document.getElementById('lc-access');
@@ -68,14 +68,14 @@ const LastCall = {
 
     start() {
         this.readSettings();
-        // в режиме reset endsAt динамически обновляется в onMessage
+
         this.state = {
             startedAt: Date.now(),
             cooldownUntil: Date.now() + this.config.cooldownSec * 1000,
             endsAt: Date.now() + this.config.duration * 1000,
-            lastReset: Date.now() + this.config.duration * 1000,  // для reset-режима — момент текущего "истечения"
+            lastReset: Date.now() + this.config.duration * 1000,
             timeLeft: this.config.duration,
-            entries: [],     // {name, text, ts, tags}
+            entries: [],
             seenNames: new Set()
         };
         this._msgRecent = [];
@@ -91,11 +91,11 @@ const LastCall = {
             else if (this.config.resetOnMessage) status.innerText = t('lcResetRunning') || '⚡ Таймер сбрасывается на каждое сообщение';
             else status.innerText = t('lcRunning') || 'Чат пишет... 👀';
         }
-        // подсветка значка режима reset
+
         const resetBadge = document.getElementById('lc-reset-badge');
         if (resetBadge) resetBadge.style.display = this.config.resetOnMessage ? 'inline-flex' : 'none';
         Sound.go();
-        const CIRC = 678.58; // 2π * 108
+        const CIRC = 678.58;
         this._tickIv = setInterval(() => {
             if (!this.isActive) return;
             const left = Math.max(0, Math.ceil((this.state.endsAt - Date.now()) / 1000));
@@ -109,7 +109,7 @@ const LastCall = {
                 const ratio = 1 - (left / this.config.duration);
                 ring.style.strokeDashoffset = (-CIRC * ratio).toFixed(2);
             }
-            // прогрев индикация
+
             if (status && this.config.cooldownSec > 0) {
                 const cdLeft = Math.max(0, Math.ceil((this.state.cooldownUntil - Date.now()) / 1000));
                 if (cdLeft > 0) status.innerText = (t('lcCooldown') || 'Прогрев ') + cdLeft + 'с...';
@@ -140,14 +140,14 @@ const LastCall = {
     onMessage(name, text, tags) {
         if (!this.isActive || !this.state) return;
         const now = Date.now();
-        if (now < this.state.cooldownUntil) return;       // прогрев
+        if (now < this.state.cooldownUntil) return;
         if (now > this.state.endsAt) return;
         if (!this._checkAccess(tags)) return;
-        // фильтры
+
         const trimmed = text.trim();
         if (this.config.antiBot) {
             if (trimmed.length < this.config.minLen) return;
-            // только-эмоуты (только из 7tv словаря)
+
             const words = trimmed.split(/\s+/);
             const onlyEmotes = words.length > 0 && words.every(w => Emotes.isEmote(w));
             if (onlyEmotes) return;
@@ -158,23 +158,22 @@ const LastCall = {
         }
         if (this.config.oneEntry && this.state.seenNames.has(name)) return;
         this.state.seenNames.add(name);
-        // удалить старую запись юзера, если он уже писал (для режима "не oneEntry" — последнее побеждает)
+
         if (!this.config.oneEntry) {
             const idx = this.state.entries.findIndex(e => e.name === name);
             if (idx >= 0) this.state.entries.splice(idx, 1);
         }
         this.state.entries.push({ name, text: trimmed, ts: now, tags, color: tags.color || '#9ca3af' });
 
-        // ⚡ RESET MODE — сбрасываем таймер на каждое валидное сообщение
         if (this.config.resetOnMessage) {
             this.state.endsAt = now + this.config.duration * 1000;
             this.state.lastReset = this.state.endsAt;
-            // визуальный флэш на кольце
+
             const ring = document.getElementById('lc-ring');
             if (ring) {
                 ring.style.transition = 'none';
                 ring.style.strokeDashoffset = '0';
-                void ring.offsetWidth; // reflow
+                void ring.offsetWidth;
                 ring.style.transition = 'stroke-dashoffset 1s linear';
             }
             const ringWrap = document.getElementById('lc-ring-wrap');
@@ -186,9 +185,8 @@ const LastCall = {
             Sound.tick();
         }
 
-        // прогресс
         const cnt = document.getElementById('lc-msg-count'); if (cnt) cnt.innerText = this.state.entries.length;
-        // лента
+
         const list = document.getElementById('lc-msg-list');
         if (list) {
             const item = document.createElement('div');
@@ -206,7 +204,7 @@ const LastCall = {
         if (this._tickIv) { clearInterval(this._tickIv); this._tickIv = null; }
         Sound.final();
         confetti({ particleCount: 120, spread: 95, origin: { y: .55 }, colors: ['#65d0ff','#8b7dff','#ff79df'] });
-        // сортируем по убыванию времени — последний написавший первый
+
         const entries = this.state.entries.slice().sort((a,b) => b.ts - a.ts);
         const winner = entries[0];
         UI.switchScene('lastcall-result');
@@ -226,7 +224,7 @@ const LastCall = {
                 wme.innerText = (t('lcWroteAt') || 'Написал на ') + secLeft + 'с · ' + total + ' ' + (t('lcParticipants') || 'участников');
             }
         }
-        // топ-5
+
         const top5 = document.getElementById('lc-top5');
         if (top5) {
             top5.innerHTML = '';
@@ -238,7 +236,7 @@ const LastCall = {
                 entries.slice(1, this.config.showTopN).forEach((e, i) => {
                     const row = document.createElement('div');
                     row.className = 'lc-podium-item';
-                    const rank = i + 2; // 2,3,4,5
+                    const rank = i + 2;
                     const rankCls = rank === 2 ? 'r2' : rank === 3 ? 'r3' : 'rN';
                     const sec = Math.max(0, Math.round((e.ts - this.state.startedAt) / 100) / 10);
                     row.innerHTML = `
@@ -250,7 +248,7 @@ const LastCall = {
                 });
             }
         }
-        // история
+
         this._saveHistory(winner, entries.length);
     },
 
@@ -276,7 +274,7 @@ const LastCall = {
     goHome() {
         Sound.click();
         this.cleanup();
-        // полный возврат на mode-select (соединение с чатом остаётся)
+
         UI.switchScene('mode-select');
     },
 

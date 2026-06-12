@@ -1,19 +1,19 @@
-// CHAT ROAST AI — мульти-провайдер психоанализатор чата
+
 const Roast = {
-    // постоянно работающий сбор сообщений (стартует сразу при подключении к чату)
+
     isCollecting: false,
     isActive: false,
     collectStartedAt: 0,
 
     config: {
-        provider: 'local',      // anthropic | openai | xai | deepseek | local | custom
+        provider: 'local',
         categories: ['positive','toxic','clown','hype','drama','salt','lore','weird','silent','spammer','philosopher','simp','detective','caps'],
-        customCats: [],         // [{id, emoji, label, desc}]
+        customCats: [],
         roundsTarget: 6,
         answerCount: 4,
-        difficulty: 'normal',   // easy/normal/hard
-        tone: 'playful',        // playful/spicy/wholesome
-        language: 'auto',       // auto/ru/en/uk
+        difficulty: 'normal',
+        tone: 'playful',
+        language: 'auto',
         customPrompt: '',
         keys: { anthropic: '', openai: '', xai: '', deepseek: '', custom: '' },
         models: {
@@ -26,7 +26,6 @@ const Roast = {
         customUrl: ''
     },
 
-    // Master-список встроенных характеристик. emoji+label+q для UI, desc — для AI-промпта.
     CATS: [
         { key: 'positive',    emoji: '😇', label: 'Лучик добра',     q: 'Кто сегодня самый позитивный и добрый?',        desc: 'самый позитивный, добрый, поддерживающий — заряжает чат хорошим настроением' },
         { key: 'toxic',       emoji: '😈', label: 'Душнила дня',      q: 'Кто сегодня главный душнила?',                  desc: 'самый придирчивый/занудный/ворчливый, на всё имеет недовольное мнение (без настоящих оскорблений)' },
@@ -49,8 +48,6 @@ const Roast = {
     _aiProgressIv: null,
     _statsIv: null,
 
-    // ============== СБОР ==============
-    // Стартует автоматически при заходе пользователя на mode-select (см. app.connect)
     beginCollecting() {
         if (this.isCollecting) return;
         this.isCollecting = true;
@@ -62,14 +59,13 @@ const Roast = {
         if (!this.isCollecting) return;
         if (text.startsWith('!') || text.length < 2) return;
         const color = tags.color || '#9ca3af';
-        // ВАЖНО: не пишем в app.users — иначе ломается сбор участников CHATGOOSE.
-        // Roast ведёт собственный реестр цветов юзеров.
+
         if (!this._userColors) this._userColors = {};
         this._userColors[name] = color;
         this.collected.push({ name, text, color, tags, ts: Date.now() });
-        // лимит на буфер
+
         if (this.collected.length > 2000) this.collected.shift();
-        // если открыт чек-лист — обновим live-стату
+
         this._updateChecklistStats();
     },
 
@@ -78,11 +74,10 @@ const Roast = {
     },
 
     _updateChecklistStats() {
-        // обновляем UI только если чек-лист Roast реально на экране — иначе это
-        // лишняя работа на каждое сообщение чата всю сессию (источник лагов)
+
         const sc = document.getElementById('scene-roast-checklist');
         if (!sc || sc.classList.contains('hidden')) return;
-        // троттлинг: не чаще раза в 400мс
+
         const now = Date.now();
         if (this._lastStatsUpd && now - this._lastStatsUpd < 400) return;
         this._lastStatsUpd = now;
@@ -113,15 +108,14 @@ const Roast = {
         if (this._statsIv) { clearInterval(this._statsIv); this._statsIv = null; }
     },
 
-    // ============== НАСТРОЙКИ ==============
     loadSettings() {
         const s = Storage.load('cg_roast_settings');
         if (s) Object.assign(this.config, s);
-        // миграция: убираем устаревшие ключи категорий (напр. thirst), пустой список -> все
+
         const validKeys = new Set(this.CATS.map(c => c.key));
         this.config.categories = (this.config.categories || []).filter(k => validKeys.has(k));
         if (!this.config.categories.length) this.config.categories = this.CATS.map(c => c.key);
-        // ключи отдельно (privacy)
+
         const keysSaved = Storage.load('cg_roast_keys', null);
         if (keysSaved) Object.assign(this.config.keys, keysSaved);
         const customUrl = localStorage.getItem('cg_roast_custom_url');
@@ -129,9 +123,8 @@ const Roast = {
         const customModel = localStorage.getItem('cg_roast_custom_model');
         if (customModel) this.config.models.custom = customModel;
 
-        // рендерим чекбоксы категорий из master-списка + кастомные
         this._renderCatChecklist();
-        // подставляем в DOM
+
         document.querySelectorAll('.roast-cat').forEach(cb => cb.checked = this.config.categories.includes(cb.value));
         this._renderCustomCats();
         ['anthropic','openai','xai','deepseek'].forEach(p => {
@@ -150,7 +143,7 @@ const Roast = {
         const lg = document.getElementById('roast-language');       if (lg) lg.value = this.config.language;
         const cp = document.getElementById('roast-custom-prompt');  if (cp) cp.value = this.config.customPrompt;
         this.selectProvider(this.config.provider);
-        // запуск стат-таймера
+
         this._startChecklistTimer();
     },
 
@@ -162,7 +155,6 @@ const Roast = {
         if (this.config.models.custom) localStorage.setItem('cg_roast_custom_model', this.config.models.custom);
     },
 
-    // рисуем сетку чекбоксов встроенных характеристик
     _renderCatChecklist() {
         const grid = document.getElementById('roast-cat-grid');
         if (!grid) return;
@@ -173,7 +165,6 @@ const Roast = {
             </label>`).join('');
     },
 
-    // список кастомных характеристик
     _renderCustomCats() {
         const wrap = document.getElementById('roast-custom-cats-list');
         if (!wrap) return;
@@ -248,7 +239,6 @@ const Roast = {
         this.saveSettings();
     },
 
-    // объединённый список активных характеристик: выбранные встроенные + все кастомные
     _activeCats() {
         const builtin = this.CATS.filter(c => this.config.categories.includes(c.key))
             .map(c => ({ key: c.key, label: c.label, desc: c.desc, emoji: c.emoji }));
@@ -257,7 +247,6 @@ const Roast = {
         return builtin.concat(custom);
     },
 
-    // ============== АНАЛИЗ ==============
     async beginAnalysis() {
         this.readSettings();
         if (this._activeCats().length === 0) {
@@ -272,7 +261,7 @@ const Roast = {
         if (this.collected.length < 6) {
             if (!confirm(t('roastTooFew') || 'Собрано мало сообщений. Анализ может быть слабым. Продолжить?')) return;
         }
-        // проверка ключа для облачных провайдеров
+
         const p = this.config.provider;
         if (p === 'anthropic' && !(this.config.keys.anthropic || '').startsWith('sk-ant-')) {
             alert((t('roastProvKeyErr') || 'Введи ключ для ') + 'Anthropic (sk-ant-...)');
@@ -299,7 +288,7 @@ const Roast = {
         UI.switchScene('roast-collect');
         Sound.go();
         this._startAiProgress();
-        // показать какой провайдер анализирует
+
         const sub = document.getElementById('roast-analyzing-sub');
         if (sub) sub.innerText = (t('roastUsingProvider') || 'Через ') + this._provLabel(p);
         const stats = document.getElementById('roast-analyzing-stats');
@@ -339,9 +328,8 @@ const Roast = {
         if (el) el.style.width = '100%';
     },
 
-    // ============== LOCAL HEURISTIC (без LLM) ==============
     _analyzeLocal() {
-        // строим профиль для каждого юзера
+
         const byUser = {};
         this.collected.forEach(c => {
             if (!byUser[c.name]) byUser[c.name] = { name: c.name, color: c.color, msgs: [] };
@@ -361,7 +349,6 @@ const Roast = {
         const CLOWN    = /(ахаха|ахах|лол|кек|ору|ржу|🤣|😂|🤡|прикол|шутк|анекдот|kekw|lul|lmao|xdd?)/i;
         const HYPE     = /(погнали|вперёд|давай|го|gg|изи|вамос|ура|нагибаем|разнос|👏|🔥|🚀|поехали|hype|летс гоу|пушка)/i;
 
-
         const scores = users.map(u => {
             const all = u.msgs.join(' ');
             const totalChars = all.length;
@@ -372,7 +359,7 @@ const Roast = {
             const capsRatio = (all.match(/[A-ZА-ЯЁ]/g) || []).length / Math.max(1, totalChars);
             const emojiCount = (all.match(/\p{Emoji}/gu) || []).length;
             const emojiRatio = emojiCount / Math.max(1, totalChars);
-            // эмоут-плотность: слова из эмоут-словаря 7tv / всего слов
+
             const words = all.split(/\s+/).filter(Boolean);
             const emoteWords = words.filter(w => (Emotes.isEmote && Emotes.isEmote(w))).length;
             const emoteRatio = emoteWords / Math.max(1, words.length);
@@ -415,11 +402,11 @@ const Roast = {
             ),
             weird: () => pickBest(
                 (s, msgs) => {
-                    // считаем редкость слов
+
                     let weirdScore = s.weird * 3;
                     if (s.emojiRatio > 0.1) weirdScore += 2;
                     if (s.capsRatio > 0.5 && s.totalChars > 20) weirdScore += 2;
-                    // длинные неосмысленные слова
+
                     const longGib = msgs.filter(m => /[А-ЯЁA-Z]{6,}/.test(m)).length;
                     weirdScore += longGib * 2;
                     return weirdScore;
@@ -428,7 +415,7 @@ const Roast = {
             ),
             silent: () => pickBest(
                 (s) => {
-                    // самый молчун — мало сообщений, но не нулевой контент
+
                     if (s.msgCount > 3) return 0;
                     return (4 - s.msgCount) * 2 + (s.avgLen > 5 ? 1 : 0);
                 },
@@ -479,7 +466,6 @@ const Roast = {
             )
         };
 
-        // generic fallback для кастомных и любых характеристик без своего эвристического правила
         const genericPick = () => {
             const ranked = scores.map(s => ({ s, v: s.stats.totalChars + s.stats.msgCount * 5 + Math.random() * 20 }))
                 .sort((a, b) => b.v - a.v);
@@ -506,14 +492,14 @@ const Roast = {
         };
         const langPick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-        const usedUsers = new Map(); // user -> count (max 2)
+        const usedUsers = new Map();
         const results = [];
         const activeCats = this._activeCats();
-        // перемешиваем, чтобы при превышении roundsTarget набор был разнообразным
+
         const shuffledCats = activeCats.slice().sort(() => Math.random() - 0.5);
         for (const catObj of shuffledCats) {
             const cat = catObj.key;
-            const h = handlers[cat] || genericPick;   // кастомные/новые → generic
+            const h = handlers[cat] || genericPick;
             let attempt = 0;
             let res = h();
             while (res && (usedUsers.get(res.user) || 0) >= 2 && attempt < 6) {
@@ -526,7 +512,7 @@ const Roast = {
             if (!res) res = genericPick();
             if (!res) continue;
             usedUsers.set(res.user, (usedUsers.get(res.user) || 0) + 1);
-            // reasoning: для кастомных — на основе их label
+
             const reason = reasoningTemplates[cat]
                 ? langPick(reasoningTemplates[cat])
                 : (catObj.label ? `Похоже, это «${catObj.label}» сегодня` : '—');
@@ -538,13 +524,12 @@ const Roast = {
         return results;
     },
 
-    // ============== REMOTE LLM ==============
     async _analyzeRemote() {
         const p = this.config.provider;
         const sample = this.collected.slice(-300).map(m => ({ user: m.name, text: m.text }));
         const uniqueUsers = [...new Set(sample.map(m => m.user))];
 
-        const cats = this._activeCats(); // [{key, label, desc}]
+        const cats = this._activeCats();
         const wantCats = cats.map(c => `- ${c.key}: ${c.label} — ${c.desc}`).join('\n');
         const toneInstr = {
             playful:  'Тон лёгкий, шуточный, дружеский. Без оскорблений.',
@@ -581,7 +566,6 @@ ${wantCats}
 
         const userMessage = `Снапшот чата (${sample.length} сообщений от ${uniqueUsers.length} юзеров):\n\n${sample.map(m => `${m.user}: ${m.text}`).join('\n')}\n\nКатегории на анализ: ${cats.map(c => c.key).join(', ')}.\n\nВерни массив с одной записью на каждую активную категорию (или меньше, если нет подходящего юзера). Не более ${this.config.roundsTarget} записей.`;
 
-        // ВЫЗОВ — разные эндпоинты для разных провайдеров
         let text = '';
         if (p === 'anthropic') {
             const resp = await fetch('https://api.anthropic.com/v1/messages', {
@@ -603,7 +587,7 @@ ${wantCats}
             const data = await resp.json();
             text = (data.content || []).map(b => b.type === 'text' ? b.text : '').join('').trim();
         } else {
-            // OpenAI-compat: openai/xai/deepseek/custom
+
             let url, model, key;
             if (p === 'openai')   { url = 'https://api.openai.com/v1/chat/completions';        model = this.config.models.openai;   key = this.config.keys.openai; }
             if (p === 'xai')      { url = 'https://api.x.ai/v1/chat/completions';              model = this.config.models.xai;      key = this.config.keys.xai; }
@@ -631,7 +615,6 @@ ${wantCats}
             text = data?.choices?.[0]?.message?.content?.trim() || '';
         }
 
-        // ===== ПАРСИНГ JSON =====
         const cleaned = text.replace(/```json\s*|```\s*$/g, '').trim();
         let parsed;
         try { parsed = JSON.parse(cleaned); }
@@ -651,7 +634,6 @@ ${wantCats}
         return cleanResults;
     },
 
-    // ============== ИГРА ==============
     _startGame(results) {
         Sound.go();
         this.state = {
@@ -668,10 +650,10 @@ ${wantCats}
     },
 
     _catMeta(cat) {
-        // встроенная?
+
         const builtin = this.CATS.find(c => c.key === cat);
         if (builtin) return { emoji: builtin.emoji, label: builtin.label, q: builtin.q };
-        // кастомная?
+
         const cc = (this.config.customCats || []).find(c => c.id === cat || c.label === cat);
         if (cc) return { emoji: cc.emoji || '⭐', label: cc.label, q: (t('roastWhoIs') || 'Кто это —') + ' ' + cc.label + '?' };
         return { emoji: '🔮', label: cat, q: 'Кто это написал?' };
@@ -689,7 +671,7 @@ ${wantCats}
         if (q) q.innerText = meta.q;
         const quote = document.getElementById('roast-quote');
         if (quote) quote.innerHTML = `<span style="opacity:.85;">"${Emotes.parse(r.quote || '—')}"</span>${r.reasoning ? '<div style="margin-top:6px;font-size:11px;color:var(--c-muted);opacity:.75;font-style:normal;">💭 ' + r.reasoning + '</div>' : ''}`;
-        // варианты ответа
+
         const allUsers = [...new Set(this.collected.map(c => c.name))];
         const distractors = allUsers.filter(n => n !== r.user);
         for (let i = distractors.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [distractors[i],distractors[j]] = [distractors[j],distractors[i]]; }
@@ -764,7 +746,7 @@ ${wantCats}
         this.isActive = false;
         this._stopAiProgress();
         this._stopChecklistTimer();
-        // сбор продолжаем (он работает в фоне всю сессию)
+
         UI.switchScene('mode-select');
     },
 
@@ -774,7 +756,6 @@ ${wantCats}
         this._stopChecklistTimer();
     },
 
-    // полный сброс при выходе на login
     fullReset() {
         this.isCollecting = false;
         this.isActive = false;
