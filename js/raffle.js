@@ -35,6 +35,9 @@ const Raffle = {
             this.config.bonus = Object.assign({ sub: 0, mod: 0, vip: 0, firstTimer: 0 }, s.bonus || {});
             delete this.config.roles.plebs;
             delete this.config.bonus.plebs;
+            if (this.config.keyword) {
+                this.config.keyword = this.config.keyword.replace(/^!+/, '').trim().toLowerCase() || 'join';
+            }
         }
         this._syncSettingsUI();
     },
@@ -59,6 +62,21 @@ const Raffle = {
         ch('rf-require-follow', c.requireFollow);
         v('rf-min-follow-days', c.minFollowDays || '');
         v('rf-min-msgs', c.minMsgs || '');
+        this._updateSoundBtn();
+    },
+
+    _updateSoundBtn() {
+        const btn = document.getElementById('rf-btn-sound');
+        if (btn) btn.textContent = this.config.sound ? '🔊' : '🔇';
+    },
+
+    toggleSoundBtn() {
+        this.config.sound = !this.config.sound;
+        this._updateSoundBtn();
+        const cb = document.getElementById('rf-sound');
+        if (cb) cb.checked = this.config.sound;
+        this.saveSettings();
+        Sound.click();
     },
 
     readSettings() {
@@ -136,6 +154,7 @@ const Raffle = {
         this._renderControls();
         this._renderEntrants(true);
         this._renderWinners();
+        this._updateSoundBtn();
         this._persist();
     },
 
@@ -240,8 +259,9 @@ const Raffle = {
         if (!this.isOpen) { this._saveSoon(); return; }
 
         if (!this.config.joinAnyMsg) {
-            const norm = text.trim().toLowerCase().replace(/^!+/, '');
-            if (norm !== this.config.keyword) { this._saveSoon(); return; }
+            const kw = (this.config.keyword || 'join').toLowerCase().replace(/^!+/, '').trim();
+            const norm = text.trim().toLowerCase().replace(/^!+\s*/, '').trim();
+            if (norm !== kw) { this._saveSoon(); return; }
         }
 
         const role = this._roleOf(tags);
@@ -659,6 +679,16 @@ const Raffle = {
         const show = p.style.display === 'none' || !p.style.display;
         if (!show) this.readSettings();
         p.style.display = show ? 'block' : 'none';
+        if (show) { const r = document.getElementById('rf-rules-panel'); if (r) r.style.display = 'none'; }
+    },
+
+    toggleRules() {
+        Sound.click();
+        const p = document.getElementById('rf-rules-panel');
+        if (!p) return;
+        const show = p.style.display === 'none' || !p.style.display;
+        p.style.display = show ? 'flex' : 'none';
+        if (show) { const s = document.getElementById('rf-settings-panel'); if (s) s.style.display = 'none'; }
     },
 
     goHome() {

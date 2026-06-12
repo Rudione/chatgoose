@@ -118,6 +118,10 @@ const UI = {
         if (btnSettings) btnSettings.style.display = (id === 'mode-select' || id === 'warning-pre' || id === 'loading' || id === 'lastcall-checklist' || id === 'roast-checklist' || id === 'oracle-checklist') ? 'flex' : 'none';
         if (topCtrl) topCtrl.style.display = (isGame || id === 'roulette') ? 'none' : 'flex';
         if (btnExit) btnExit.style.display = isGame ? 'flex' : 'none';
+        const fabFaq = document.getElementById('fab-faq');
+        const fabRules = document.getElementById('fab-rules');
+        if (fabFaq) fabFaq.style.display = id === 'roulette' ? 'none' : '';
+        if (fabRules) fabRules.style.display = id === 'roulette' ? 'none' : '';
         const histPanel = document.getElementById('history-panel');
         if (histPanel && id !== 'game' && id !== 'final') histPanel.style.display = 'none';
         const hudEl = document.getElementById('hud');
