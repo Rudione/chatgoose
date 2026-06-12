@@ -24,7 +24,8 @@ window.app = {
     config: {
         needed: 20, rounds: 20, timerPer: 0, timerTotal: 0,
         allowRepeat: true, showBadges: true, finalRound: true, mediaMode: true,
-        activeModes: [], access: 'all', limitQuestions: false, linksOnly: false, vipAsMod: true
+        activeModes: [], access: 'all', limitQuestions: false, linksOnly: false, vipAsMod: true,
+        modeWeights: {}, modeMaxRounds: {}
     },
 
     state: {
@@ -128,9 +129,14 @@ window.app = {
         Emotes.load(ch);
         // Roast собирает чат с момента подключения (даже если стример выберет другой режим)
         if (window.Roast) Roast.beginCollecting();
-        this.client = new tmi.Client({ channels: [ch] });
+        this.client = new tmi.Client({ connection: { reconnect: true, secure: true, maxReconnectAttempts: Infinity, reconnectInterval: 2000 }, channels: [ch] });
         this.client.connect().catch(e => { alert(t('errConnecting') + e); UI.switchScene('login'); });
         this._bindChatEvents();
+        if (this._pendingMode) {
+            const pm = this._pendingMode;
+            this._pendingMode = null;
+            setTimeout(() => this.selectMode(pm), 150);
+        }
     },
 
     selectMode(mode) {
@@ -151,7 +157,12 @@ window.app = {
         } else if (mode === 'oracle') {
             UI.switchScene('oracle-checklist');
             if (window.Oracle) Oracle.loadSettings();
+        } else if (mode === 'roulette') {
+            UI.switchScene('roulette');
+            if (window.Raffle) Raffle.enterScene();
         }
+        const hashMap = { chatgoose: 'chatgoose', lastcall: 'lastcall', roast: 'roast', oracle: 'oracle', roulette: 'roulettee' };
+        if (hashMap[mode]) { try { history.replaceState(null, '', '#' + hashMap[mode]); } catch (e) {} }
     },
 
     backToModeSelect() {
@@ -159,6 +170,8 @@ window.app = {
         if (window.LastCall) LastCall.cleanup();
         if (window.Roast) Roast.cleanup();
         if (window.Oracle) Oracle.cleanup();
+        if (window.Raffle) Raffle.cleanup();
+        try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
         UI.switchScene('mode-select');
     },
 
@@ -181,6 +194,7 @@ window.app = {
             if (window.LastCall && LastCall.isActive) LastCall.onMessage(name, m, tags);
             if (window.Roast    && Roast.isCollecting) Roast.onMessage(name, m, tags);
             if (window.Oracle   && Oracle.isCollecting) Oracle.onMessage(name, m, tags);
+            if (window.Raffle) Raffle.onMessage(name, m, tags);
 
             if (!this.state.active && this._collectingMessages) {
                 if (this.config.linksOnly && !url) return;
@@ -351,6 +365,8 @@ window.app = {
         if (window.LastCall) LastCall.cleanup();
         if (window.Roast) Roast.fullReset();
         if (window.Oracle) Oracle.cleanup();
+        if (window.Raffle) Raffle.cleanup();
+        try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
         Storage.clear(Storage.KEYS.session);
         UI.switchScene('login');
         Sound.click();
@@ -367,7 +383,7 @@ window.app = {
         ['login','mode-select','loading','warning-pre','game','final','result',
          'lastcall-checklist','lastcall-game','lastcall-result',
          'roast-checklist','roast-collect','roast-game','roast-result',
-         'oracle-checklist','oracle-question','oracle-game','oracle-postfact','oracle-result','oracle-leaderboard'].forEach(s => {
+         'oracle-checklist','oracle-question','oracle-game','oracle-postfact','oracle-result','oracle-leaderboard','roulette'].forEach(s => {
             const el = document.getElementById('scene-' + s); if (el) el.classList.add('hidden');
             const act = document.getElementById('scene-' + s + '-actions'); if (act) act.classList.add('hidden');
         });
@@ -403,6 +419,7 @@ window.app = {
         this._authorQuestionTexts = new Set(); this._usedMediaCombos = new Set();
         this._revealedTexts = new Set(); this._quizzedAuthors = new Set();
         this._playedAuthors = new Set();
+        this._modePlayCount = {};
         this._finalChecked = false; this._pendingTimers = [];
 
         document.getElementById('scene-countdown').classList.add('hidden');
@@ -528,9 +545,29 @@ window.app = {
             const f = modes.filter(m => m !== 'CLASSIC' && m !== 'MEDIA');
             if (f.length) modes = f;
         }
+
+        // ЛИМИТ РАУНДОВ НА ТЕМУ: если задан максимум и тема его выбрала — исключаем.
+        // Если после фильтра пусто — лимиты игнорируем (приоритет: каждый участник играет).
+        if (!this._modePlayCount) this._modePlayCount = {};
+        const slugByMode = { CLASSIC:'classic', TRUE_FALSE:'tf', CENSORED:'censor', WHOSE_MSG:'tf2', MOD_VS_VIEWER:'modview', MEDIA:'media', EMOTE_OR_WORD:'emote', DETECTIVE:'detective', FIRST_WORD:'firstword', TWO_OF_FOUR:'2of4', GUESS_7TV:'7tv', EMOJI_CHAIN:'emoji-chain', CAPSCHECK:'capscheck', SPEEDRACE:'speedrace' };
+        const maxR = this.config.modeMaxRounds || {};
+        const underLimit = modes.filter(m => {
+            const lim = maxR[slugByMode[m]] || 0;
+            return lim === 0 || (this._modePlayCount[m] || 0) < lim;
+        });
+        if (underLimit.length) modes = underLimit;
+
         if (!modes.length) modes = ['CLASSIC'];
 
-        const mode = modes[Math.floor(Math.random() * modes.length)];
+        // ВЗВЕШЕННЫЙ ВЫБОР по процентам из настроек (fallback: равные веса)
+        const weights = this.config.modeWeights || {};
+        const pool = modes.map(m => ({ m, w: Math.max(1, weights[slugByMode[m]] || 1) }));
+        const totalW = pool.reduce((s, p) => s + p.w, 0);
+        let roll = Math.random() * totalW;
+        let mode = pool[pool.length - 1].m;
+        for (const p of pool) { roll -= p.w; if (roll <= 0) { mode = p.m; break; } }
+        this._modePlayCount[mode] = (this._modePlayCount[mode] || 0) + 1;
+
         this.state.currentMode = mode;
         this._revealedTexts.add(target.text);
         this._playedAuthors.add(target.name);
@@ -918,6 +955,19 @@ window.app = {
     Settings.load();
     applyLang();
     UI.switchScene('login');
+
+    if (window.Raffle) Raffle.restore();
+    const hashModes = { chatgoose: 'chatgoose', lastcall: 'lastcall', roast: 'roast', oracle: 'oracle', roulettee: 'roulette', roulette: 'roulette' };
+    const wantMode = hashModes[(location.hash || '').replace('#', '').toLowerCase()] || (window.Raffle && Raffle.isOpen ? 'roulette' : '');
+    if (wantMode) {
+        const savedCh = (window.Raffle && Raffle.savedChannel()) || Storage.load(Storage.KEYS.settings)?.channel || '';
+        if (savedCh) {
+            const ci0 = document.getElementById('channel-input');
+            if (ci0) ci0.value = savedCh;
+            app._pendingMode = wantMode;
+            setTimeout(() => app.connect(), 60);
+        }
+    }
     const sl = document.getElementById('users-slider'); if (sl) UI.updateSlider(sl);
     const ci = document.getElementById('channel-input');
     if (ci) ci.addEventListener('keydown', e => { if (e.key === 'Enter') app.connect(); });

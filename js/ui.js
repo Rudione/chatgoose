@@ -93,7 +93,8 @@ const UI = {
         const allScenes = ['login','mode-select','loading','warning-pre','game','final','result',
             'lastcall-checklist','lastcall-game','lastcall-result',
             'roast-checklist','roast-collect','roast-game','roast-result',
-            'oracle-checklist','oracle-question','oracle-game','oracle-postfact','oracle-result','oracle-leaderboard'];
+            'oracle-checklist','oracle-question','oracle-game','oracle-postfact','oracle-result','oracle-leaderboard',
+            'roulette'];
         allScenes.forEach(s => {
             const el = document.getElementById('scene-' + s);
             if (el) el.classList.add('hidden');
@@ -115,8 +116,12 @@ const UI = {
         const isGame = id === 'game' || id === 'final' || id === 'lastcall-game' || id === 'roast-collect' || id === 'roast-game' || id === 'oracle-question' || id === 'oracle-game' || id === 'oracle-postfact';
 
         if (btnSettings) btnSettings.style.display = (id === 'mode-select' || id === 'warning-pre' || id === 'loading' || id === 'lastcall-checklist' || id === 'roast-checklist' || id === 'oracle-checklist') ? 'flex' : 'none';
-        if (topCtrl) topCtrl.style.display = isGame ? 'none' : 'flex';
+        if (topCtrl) topCtrl.style.display = (isGame || id === 'roulette') ? 'none' : 'flex';
         if (btnExit) btnExit.style.display = isGame ? 'flex' : 'none';
+        const histPanel = document.getElementById('history-panel');
+        if (histPanel && id !== 'game' && id !== 'final') histPanel.style.display = 'none';
+        const hudEl = document.getElementById('hud');
+        if (hudEl && id !== 'game' && id !== 'final') hudEl.style.display = 'none';
     },
 
     openModal(id) {

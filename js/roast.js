@@ -6,8 +6,8 @@ const Roast = {
     collectStartedAt: 0,
 
     config: {
-        provider: 'anthropic',  // anthropic | openai | xai | deepseek | local | custom
-        categories: ['positive','toxic','lore','clown','hype','silent','simp','drama'],
+        provider: 'local',      // anthropic | openai | xai | deepseek | local | custom
+        categories: ['positive','toxic','clown','hype','drama','salt','lore','weird','silent','spammer','philosopher','simp','detective','caps'],
         customCats: [],         // [{id, emoji, label, desc}]
         roundsTarget: 6,
         answerCount: 4,
@@ -117,6 +117,10 @@ const Roast = {
     loadSettings() {
         const s = Storage.load('cg_roast_settings');
         if (s) Object.assign(this.config, s);
+        // миграция: убираем устаревшие ключи категорий (напр. thirst), пустой список -> все
+        const validKeys = new Set(this.CATS.map(c => c.key));
+        this.config.categories = (this.config.categories || []).filter(k => validKeys.has(k));
+        if (!this.config.categories.length) this.config.categories = this.CATS.map(c => c.key);
         // ключи отдельно (privacy)
         const keysSaved = Storage.load('cg_roast_keys', null);
         if (keysSaved) Object.assign(this.config.keys, keysSaved);
