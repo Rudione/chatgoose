@@ -1273,62 +1273,90 @@
       <div id="rf-elim-board" class="rf-elim-board" style="display:none;"></div>
     </div>
 
+    <div id="rf-settings-scrim" onclick="Raffle.toggleSettings()"></div>
+
     <div id="rf-settings-panel" class="liquid-glass rf-modal" style="display:none;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div class="font-display grad-text" style="font-size:19px;font-weight:700;" data-i18n="rfSettingsTitle">⚙️ Настройки рафла</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <div class="font-display grad-text" style="font-size:20px;font-weight:700;" data-i18n="rfSettingsTitle">⚙️ Настройки рафла</div>
         <button onclick="Raffle.toggleSettings()" class="rf-iconbtn">✕</button>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
-        <div class="glass2" style="padding:11px;">
-          <div class="rf-set-label" data-i18n="rfKeyword">Кодовое слово</div>
-          <input type="text" id="rf-keyword" value="join" class="roast-key-input" onchange="Raffle.readSettings()">
-          <div style="font-size:9px;color:var(--c-muted);margin-top:4px;" data-i18n="rfKeywordHint">Засчитывается и «!слово», и просто «слово»</div>
-          <label class="toggle-wrap" style="margin-top:8px;cursor:pointer;display:flex;align-items:center;gap:8px;">
-            <div class="toggle"><input type="checkbox" id="rf-join-any" onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div>
-            <span style="font-size:11px;font-weight:600;" data-i18n="rfJoinAnyMsg">Любое сообщение = участие</span>
-          </label>
-        </div>
-        <div class="glass2" style="padding:11px;">
-          <div class="rf-set-label" data-i18n="rfPickMode">Режим выбора</div>
-          <select id="rf-pick-mode" class="roast-model-select" style="width:100%;padding:8px;" onchange="Raffle.readSettings()">
-            <option value="roulette" selected data-i18n="rfPickRoulette">🎰 Рулетка (CS-style)</option>
-            <option value="elimination" data-i18n="rfPickElim">⚔️ Выбывание</option>
-            <option value="instant" data-i18n="rfPickInstant">⚡ Мгновенно</option>
-          </select>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
-            <span style="font-size:10px;color:var(--c-muted);" data-i18n="rfSpinSec">Прокрутка</span>
-            <span id="rf-spin-sec-val" class="font-display" style="font-size:13px;font-weight:700;color:var(--c-accent);">7с</span>
+
+      <!-- Keyword -->
+      <div class="glass2 rf-set-block">
+        <div class="rf-set-label" data-i18n="rfKeyword">🔑 Кодовое слово</div>
+        <input type="text" id="rf-keyword" value="join" class="roast-key-input rf-keyword-big" autocomplete="off" spellcheck="false" onchange="Raffle.readSettings()" placeholder="join">
+        <div class="rf-set-hint" data-i18n="rfKeywordHint">Засчитывается «!слово» и просто «слово» — без учёта регистра</div>
+        <label class="rf-toggle-row" style="margin-top:10px;">
+          <div class="toggle"><input type="checkbox" id="rf-join-any" onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div>
+          <span style="font-size:12px;font-weight:600;" data-i18n="rfJoinAnyMsg">Любое сообщение = участие</span>
+        </label>
+      </div>
+
+      <!-- Pick mode + timing -->
+      <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:stretch;">
+        <div class="glass2 rf-set-block">
+          <div class="rf-set-label" data-i18n="rfPickMode">🎮 Режим розыгрыша</div>
+          <div class="rf-mode-cards">
+            <div class="rf-mode-card selected" data-mode="roulette" onclick="Raffle.setPickMode('roulette')">
+              <span class="rf-mode-card-ico">🎰</span>
+              <span class="rf-mode-card-name" data-i18n="rfPickRoulette">Рулетка</span>
+              <span class="rf-mode-card-desc">CS:GO крутилка</span>
+            </div>
+            <div class="rf-mode-card" data-mode="elimination" onclick="Raffle.setPickMode('elimination')">
+              <span class="rf-mode-card-ico">⚔️</span>
+              <span class="rf-mode-card-name" data-i18n="rfPickElim">Выбывание</span>
+              <span class="rf-mode-card-desc">Батл-рояль</span>
+            </div>
+            <div class="rf-mode-card" data-mode="instant" onclick="Raffle.setPickMode('instant')">
+              <span class="rf-mode-card-ico">⚡</span>
+              <span class="rf-mode-card-name" data-i18n="rfPickInstant">Мгновенно</span>
+              <span class="rf-mode-card-desc">Без анимации</span>
+            </div>
           </div>
-          <input type="range" id="rf-spin-sec" min="2" max="20" value="7" step="1" oninput="document.getElementById('rf-spin-sec-val').innerText=this.value+'с'" onchange="Raffle.readSettings()">
+        </div>
+        <div id="rf-spin-sec-wrap" class="glass2 rf-set-block" style="min-width:120px;">
+          <div class="rf-set-label" data-i18n="rfSpinSec">⏱ Прокрутка</div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+            <span style="font-size:10px;color:var(--c-muted);">сек</span>
+            <span id="rf-spin-sec-val" class="font-display" style="font-size:20px;font-weight:700;color:var(--c-accent);">7с</span>
+          </div>
+          <input type="range" id="rf-spin-sec" min="2" max="100" value="7" step="1" oninput="document.getElementById('rf-spin-sec-val').innerText=this.value+'с'" onchange="Raffle.readSettings()" style="width:100%;">
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--c-muted);margin-top:2px;"><span>2</span><span>100</span></div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
-        <label class="toggle-wrap glass2" style="padding:9px;cursor:pointer;"><div class="toggle"><input type="checkbox" id="rf-remove-winner" checked onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span style="font-size:11px;font-weight:600;" data-i18n="rfRemoveWinner">Убирать победителя</span></label>
-        <label class="toggle-wrap glass2" style="padding:9px;cursor:pointer;"><div class="toggle"><input type="checkbox" id="rf-sound" checked onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span style="font-size:11px;font-weight:600;" data-i18n="rfSound">Звук</span></label>
-        <label class="toggle-wrap glass2" style="padding:9px;cursor:pointer;"><div class="toggle"><input type="checkbox" id="rf-avatars" checked onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span style="font-size:11px;font-weight:600;" data-i18n="rfAvatars">Аватарки</span></label>
+
+      <!-- Toggles -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+        <label class="toggle-wrap glass2 rf-set-block" style="cursor:pointer;"><div class="toggle"><input type="checkbox" id="rf-remove-winner" checked onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span style="font-size:11px;font-weight:600;" data-i18n="rfRemoveWinner">Убирать победителя</span></label>
+        <label class="toggle-wrap glass2 rf-set-block" style="cursor:pointer;"><div class="toggle"><input type="checkbox" id="rf-sound" checked onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span style="font-size:11px;font-weight:600;" data-i18n="rfSound">Звук</span></label>
+        <label class="toggle-wrap glass2 rf-set-block" style="cursor:pointer;"><div class="toggle"><input type="checkbox" id="rf-avatars" checked onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span style="font-size:11px;font-weight:600;" data-i18n="rfAvatars">Аватарки</span></label>
       </div>
-      <div class="glass2" style="padding:11px;margin-bottom:10px;">
-        <div class="rf-set-label" style="margin-bottom:8px;" data-i18n="rfWhoCanJoin">Кто участвует и бонус-билеты</div>
+
+      <!-- Roles -->
+      <div class="glass2 rf-set-block">
+        <div class="rf-set-label" style="margin-bottom:10px;" data-i18n="rfWhoCanJoin">👥 Кто участвует и бонус-билеты</div>
         <div class="rf-roles-grid">
           <div class="rf-role-row"><div class="toggle"><input type="checkbox" id="rf-role-sub" checked onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span data-i18n="rfRoleSub">⭐ Саб</span><input type="number" id="rf-bonus-sub" min="0" max="99" value="0" onchange="Raffle.readSettings()"></div>
           <div class="rf-role-row"><div class="toggle"><input type="checkbox" id="rf-role-mod" checked onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span data-i18n="rfRoleMod">🛡️ Модер</span><input type="number" id="rf-bonus-mod" min="0" max="99" value="0" onchange="Raffle.readSettings()"></div>
           <div class="rf-role-row"><div class="toggle"><input type="checkbox" id="rf-role-vip" checked onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span data-i18n="rfRoleVip">💎 VIP</span><input type="number" id="rf-bonus-vip" min="0" max="99" value="0" onchange="Raffle.readSettings()"></div>
           <div class="rf-role-row"><div class="toggle"><input type="checkbox" id="rf-role-firstTimer" checked onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span data-i18n="rfRoleFirst">🌱 Новичок (4ч)</span><input type="number" id="rf-bonus-firstTimer" min="0" max="99" value="0" onchange="Raffle.readSettings()"></div>
         </div>
-        <div style="font-size:9px;color:var(--c-muted);margin-top:6px;" data-i18n="rfRolesHint">Новичок = первое сообщение в чате за последние 4 часа. Бонус — доп. билеты к базовому 1.</div>
+        <div class="rf-set-hint" style="margin-top:8px;" data-i18n="rfRolesHint">Новичок = первое сообщение за последние 4 часа. Бонус — доп. билеты к базовому 1.</div>
       </div>
+
+      <!-- Follow requirements -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
-        <label class="toggle-wrap glass2" style="padding:9px;cursor:pointer;"><div class="toggle"><input type="checkbox" id="rf-require-follow" onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span style="font-size:11px;font-weight:600;" data-i18n="rfRequireFollow">Только фолловеры</span></label>
-        <div class="glass2" style="padding:9px;">
-          <div style="font-size:9px;color:var(--c-muted);font-weight:700;margin-bottom:4px;" data-i18n="rfMinFollowDays">Мин. фоллов (дней)</div>
-          <input type="number" id="rf-min-follow-days" min="0" max="3650" placeholder="0" class="roast-key-input" style="padding:6px 8px;" onchange="Raffle.readSettings()">
+        <label class="toggle-wrap glass2 rf-set-block" style="cursor:pointer;"><div class="toggle"><input type="checkbox" id="rf-require-follow" onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span style="font-size:11px;font-weight:600;" data-i18n="rfRequireFollow">Только фолловеры</span></label>
+        <div class="glass2 rf-set-block">
+          <div class="rf-set-label" style="margin-bottom:6px;" data-i18n="rfMinFollowDays">Мин. фоллов (дней)</div>
+          <input type="number" id="rf-min-follow-days" min="0" max="3650" placeholder="0" class="roast-key-input" style="padding:8px 10px;width:100%;box-sizing:border-box;" onchange="Raffle.readSettings()">
         </div>
-        <div class="glass2" style="padding:9px;">
-          <div style="font-size:9px;color:var(--c-muted);font-weight:700;margin-bottom:4px;" data-i18n="rfMinMsgs">Мин. сообщений</div>
-          <input type="number" id="rf-min-msgs" min="0" max="999" placeholder="0" class="roast-key-input" style="padding:6px 8px;" onchange="Raffle.readSettings()">
+        <div class="glass2 rf-set-block">
+          <div class="rf-set-label" style="margin-bottom:6px;" data-i18n="rfMinMsgs">Мин. сообщений</div>
+          <input type="number" id="rf-min-msgs" min="0" max="999" placeholder="0" class="roast-key-input" style="padding:8px 10px;width:100%;box-sizing:border-box;" onchange="Raffle.readSettings()">
         </div>
       </div>
-      <div style="font-size:9px;color:var(--c-muted);margin-top:8px;" data-i18n="rfFollowHint">Фоллов проверяется при выпадении победителя — если не проходит, появится подсказка рерольнуть.</div>
+      <div class="rf-set-hint" data-i18n="rfFollowHint">Фоллов проверяется при выпадении победителя — если не проходит, появится подсказка рерольнуть.</div>
     </div>
 
     <div id="rf-history-panel" class="liquid-glass rf-modal" style="display:none;flex-direction:column;">
@@ -1369,8 +1397,20 @@
   </div>
 </div>
 
-<div style="position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:5;font-size:11px;color:rgba(150,150,200,0.4);font-family:'Space Grotesk',sans-serif;white-space:nowrap;">
-  Угадай зрителя по сообщению · by <a href="https://t.me/rudionee" target="_blank" rel="noopener" style="color:var(--c-accent);text-decoration:none;font-weight:600;">Rudionee</a>
+<div id="rf-reroll-modal" class="rf-confirm-overlay" onclick="if(event.target===this)Raffle.closeRerollModal()" style="display:none;">
+  <div class="rf-confirm-box liquid-glass">
+    <div class="rf-confirm-icon">🎲</div>
+    <div class="rf-confirm-title">Реролл</div>
+    <div class="rf-confirm-sub" id="rf-reroll-sub">Выбрать нового победителя?</div>
+    <div class="rf-confirm-btns">
+      <button onclick="Raffle.closeRerollModal()" class="btn-ghost" style="flex:1;padding:13px;font-size:14px;">Отмена</button>
+      <button onclick="Raffle.confirmReroll()" class="btn-primary" style="flex:1;padding:13px;font-size:14px;">🎰 Реролл!</button>
+    </div>
+  </div>
+</div>
+
+<div id="app-footer" style="position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:5;font-size:11px;color:rgba(150,150,200,0.4);font-family:'Space Grotesk',sans-serif;white-space:nowrap;">
+  <span id="app-footer-label">Угадай зрителя по сообщению</span> · by <a href="https://t.me/rudionee" target="_blank" rel="noopener" style="color:var(--c-accent);text-decoration:none;font-weight:600;">Rudionee</a>
 </div>
 
 <script src="js/tmi.js"></script>

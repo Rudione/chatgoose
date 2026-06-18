@@ -36,7 +36,8 @@ const Raffle = {
             delete this.config.roles.plebs;
             delete this.config.bonus.plebs;
             if (this.config.keyword) {
-                this.config.keyword = this.config.keyword.replace(/^!+/, '').trim().toLowerCase() || 'join';
+                const kw = this.config.keyword.replace(/^!+/, '').trim().toLowerCase();
+                this.config.keyword = kw.length >= 2 ? kw : 'join';
             }
         }
         this._syncSettingsUI();
@@ -51,7 +52,8 @@ const Raffle = {
         v('rf-keyword', c.keyword);
         ch('rf-join-any', c.joinAnyMsg);
         ch('rf-remove-winner', c.removeWinner);
-        v('rf-pick-mode', c.pickMode);
+        document.querySelectorAll('.rf-mode-card').forEach(el => el.classList.toggle('selected', el.dataset.mode === c.pickMode));
+        this._updateSpinWrap(c.pickMode);
         v('rf-spin-sec', c.spinSec); const sv = document.getElementById('rf-spin-sec-val'); if (sv) sv.innerText = c.spinSec + 'с';
         ch('rf-sound', c.sound);
         ch('rf-avatars', c.avatars);
@@ -83,11 +85,12 @@ const Raffle = {
         const c = this.config;
         const gv = id => document.getElementById(id)?.value;
         const gc = id => !!document.getElementById(id)?.checked;
-        c.keyword = (gv('rf-keyword') || 'join').trim().replace(/^!+/, '').toLowerCase() || 'join';
+        const kwRaw = (gv('rf-keyword') || '').trim().replace(/^!+/, '').toLowerCase();
+        c.keyword = kwRaw.length >= 2 ? kwRaw : 'join';
         c.joinAnyMsg = gc('rf-join-any');
         c.removeWinner = gc('rf-remove-winner');
-        c.pickMode = gv('rf-pick-mode') || 'roulette';
-        c.spinSec = Math.min(20, Math.max(2, parseInt(gv('rf-spin-sec')) || 7));
+        c.pickMode = document.querySelector('.rf-mode-card.selected')?.dataset?.mode || gv('rf-pick-mode') || 'roulette';
+        c.spinSec = Math.min(100, Math.max(2, parseInt(gv('rf-spin-sec')) || 7));
         c.sound = gc('rf-sound');
         c.avatars = gc('rf-avatars');
         ['sub','mod','vip','firstTimer'].forEach(r => {
@@ -162,7 +165,7 @@ const Raffle = {
 
     _renderJoinHint() {
         const el = document.getElementById('rf-join-word');
-        if (el) el.innerText = this.config.joinAnyMsg ? (t('rfAnyMsgWord') || 'любое сообщение') : ('!' + this.config.keyword);
+        if (el) el.innerText = this.config.joinAnyMsg ? (t('rfAnyMsgWord') || 'любое сообщение') : this.config.keyword;
         const pre = document.getElementById('rf-join-pre');
         if (pre) pre.innerText = this.config.joinAnyMsg ? (t('rfTypeHintAny') || 'Любое сообщение') : (t('rfTypeHint') || 'Пиши');
         const post = document.getElementById('rf-join-post');
@@ -170,17 +173,25 @@ const Raffle = {
     },
 
     editJoinWord() {
-        if (this.config.joinAnyMsg) { this.toggleSettings(); return; }
-        const nv = prompt(t('rfEditWordPrompt') || 'Новое кодовое слово:', this.config.keyword);
-        if (nv === null) return;
-        const clean = nv.trim().replace(/^!+/, '').toLowerCase();
-        if (!clean) return;
-        this.config.keyword = clean;
-        const inp = document.getElementById('rf-keyword');
-        if (inp) inp.value = clean;
-        this.saveSettings();
-        this._renderJoinHint();
+        const p = document.getElementById('rf-settings-panel');
+        if (!p) return;
+        const wasHidden = p.style.display === 'none' || !p.style.display;
+        if (wasHidden) {
+            p.style.display = 'block';
+            const r = document.getElementById('rf-rules-panel');
+            if (r) r.style.display = 'none';
+            this._showSettingsScrim(true);
+        }
         Sound.click();
+        setTimeout(() => {
+            const inp = document.getElementById('rf-keyword');
+            if (inp) {
+                inp.focus();
+                inp.select();
+                inp.classList.add('rf-kw-flash');
+                setTimeout(() => inp.classList.remove('rf-kw-flash'), 950);
+            }
+        }, wasHidden ? 60 : 10);
     },
 
     _renderControls() {
@@ -216,6 +227,21 @@ const Raffle = {
         this._persist();
     },
 
+    _badgeHtml(badges) {
+        if (!badges) return '';
+        const s = p => `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;">${p}</svg>`;
+        const map = [
+            ['🎥', 'Стрим', '#ff79df', s('<path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/>')],
+            ['🛡️', 'Мод', '#8b7dff', s('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>')],
+            ['💎', 'VIP', '#65d0ff', s('<path d="M6 3h12l4 6-10 13L2 9z"/><line x1="2" y1="9" x2="22" y2="9"/>')],
+            ['⭐', 'Саб', '#ffd470', s('<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>')],
+            ['👑', 'Prime', '#a970ff', s('<path d="M2 20h20"/><path d="M5 20L2 8l5 5 5-8 5 8 5-5-3 12H5z"/>')],
+        ];
+        return map.filter(([ico]) => badges.includes(ico))
+            .map(([,label,color,svg]) => `<span class="rf-role-pill" style="background:${color}1a;border-color:${color}55;color:${color};">${svg} ${label}</span>`)
+            .join('');
+    },
+
     _badgeStr(tags) {
         const b = tags.badges || {};
         let s = '';
@@ -243,11 +269,11 @@ const Raffle = {
         if (this.winners.length && this.winners[0].name === name) {
             const w0 = this.winners[0];
             if (!w0.msgs) w0.msgs = [];
-            if (w0.msgs.length < 5) {
-                w0.msgs.push({ text: text.slice(0, 140), at: now });
-                this._renderWinners();
-                this._saveSoon();
-            }
+            w0.msgs.push({ text: text.slice(0, 140), at: now });
+            this._renderWinners();
+            const sc = document.querySelector('.rf-winner-msgs-scroll');
+            if (sc) sc.scrollTop = sc.scrollHeight;
+            this._saveSoon();
         }
 
         if (this.entrants.has(name)) {
@@ -337,7 +363,31 @@ const Raffle = {
     reroll() {
         if (this._spinning) return;
         Sound.click();
-        this.draw();
+        const modal = document.getElementById('rf-reroll-modal');
+        if (!modal) { this.draw(); return; }
+        const sub = document.getElementById('rf-reroll-sub');
+        if (sub) {
+            if (this.winners.length) {
+                const w = this.winners[0];
+                sub.innerHTML = `<span style="color:${w.color};font-weight:700;">${w.name}</span> не подошёл?<br><span style="font-size:11px;">Участников: ${this.entrants.size}</span>`;
+            } else {
+                sub.innerHTML = `Участников: ${this.entrants.size}`;
+            }
+        }
+        modal.style.display = 'flex';
+        requestAnimationFrame(() => modal.classList.add('show'));
+    },
+
+    closeRerollModal() {
+        const modal = document.getElementById('rf-reroll-modal');
+        if (!modal) return;
+        modal.classList.remove('show');
+        setTimeout(() => { modal.style.display = 'none'; }, 300);
+    },
+
+    confirmReroll() {
+        this.closeRerollModal();
+        setTimeout(() => this.draw(), 120);
     },
 
     _avatarHtml(name, color, size) {
@@ -428,7 +478,7 @@ const Raffle = {
 
         let names = pool.map(([n]) => n).filter(n => n !== winner);
         for (let i = names.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [names[i], names[j]] = [names[j], names[i]]; }
-        const MAX = 30;
+        const MAX = 50;
         const shown = names.slice(0, MAX - 1).concat([winner]);
         for (let i = shown.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [shown[i], shown[j]] = [shown[j], shown[i]]; }
 
@@ -468,7 +518,7 @@ const Raffle = {
             setTimeout(step, delay);
         };
         setTimeout(step, total > 0 ? 700 : 60);
-        this._elimSafety = setTimeout(() => { if (this._spinning) { this._forceCloseOverlay(); this._finishWinner(winner); } }, 38000);
+        this._elimSafety = setTimeout(() => { if (this._spinning) { this._forceCloseOverlay(); this._finishWinner(winner); } }, 65000);
     },
 
     _elimDuel(cells, loser, winner) {
@@ -541,7 +591,6 @@ const Raffle = {
         this._startWinnerTimer();
         this._persist();
         this._fetchWinnerInfo(rec);
-        if (this.config.requireFollow || this.config.minFollowDays > 0) this._verifyFollow(rec);
     },
 
     _fmtDelta(ms) {
@@ -564,43 +613,43 @@ const Raffle = {
     },
 
     async _fetchWinnerInfo(rec) {
-        try {
-            const r = await fetch(`https://api.ivr.fi/v2/twitch/user?login=${encodeURIComponent(rec.name)}`);
-            const j = await r.json();
-            const u = Array.isArray(j) ? j[0] : j;
+        const [userRes, subRes] = await Promise.allSettled([
+            fetch(`https://api.ivr.fi/v2/twitch/user?login=${encodeURIComponent(rec.name)}`).then(r => r.json()),
+            fetch(`https://api.ivr.fi/v2/twitch/subage/${encodeURIComponent(rec.name)}/${encodeURIComponent(rec.channel)}`).then(r => r.json())
+        ]);
+        if (userRes.status === 'fulfilled') {
+            const u = Array.isArray(userRes.value) ? userRes.value[0] : userRes.value;
             rec.accountAge = u?.createdAt ? this._fmtAgo(u.createdAt) : '—';
-        } catch { rec.accountAge = '—'; }
-        try {
-            const r = await fetch(`https://api.ivr.fi/v2/twitch/subage/${encodeURIComponent(rec.name)}/${encodeURIComponent(rec.channel)}`);
-            const j = await r.json();
+        } else {
+            rec.accountAge = '—';
+        }
+        if (subRes.status === 'fulfilled') {
+            const j = subRes.value;
             rec.followAge = j?.followedAt ? ('✓ ' + this._fmtAgo(j.followedAt)) : (t('rfNotFollowing') || 'не фолловит ✕');
-        } catch { rec.followAge = '—'; }
-        this._renderWinners();
-        this._persist();
-    },
-
-    async _verifyFollow(rec) {
-        try {
-            const r = await fetch(`https://api.ivr.fi/v2/twitch/subage/${encodeURIComponent(rec.name)}/${encodeURIComponent(rec.channel)}`);
-            const j = await r.json();
-            const followedAt = j?.followedAt || null;
-            const notFollowing = !followedAt;
-            let tooFresh = false;
-            if (followedAt && this.config.minFollowDays > 0) {
-                const days = Math.floor((Date.now() - new Date(followedAt).getTime()) / 86400000);
-                if (days < this.config.minFollowDays) tooFresh = true;
-            }
-            if (notFollowing || tooFresh) {
-                const note = document.getElementById('rf-verify-note');
-                if (note) {
-                    note.style.display = 'block';
-                    note.innerText = notFollowing
-                        ? (t('rfWinnerNotFollower') || '⚠️ Победитель не фолловер — можно рерольнуть')
-                        : (t('rfWinnerFreshFollow') || '⚠️ Фоллов моложе минимума — можно рерольнуть');
-                    setTimeout(() => { note.style.display = 'none'; }, 12000);
+            if (this.config.requireFollow || this.config.minFollowDays > 0) {
+                const followedAt = j?.followedAt || null;
+                const notFollowing = !followedAt;
+                let tooFresh = false;
+                if (followedAt && this.config.minFollowDays > 0) {
+                    const days = Math.floor((Date.now() - new Date(followedAt).getTime()) / 86400000);
+                    if (days < this.config.minFollowDays) tooFresh = true;
+                }
+                if (notFollowing || tooFresh) {
+                    const note = document.getElementById('rf-verify-note');
+                    if (note) {
+                        note.style.display = 'block';
+                        note.innerText = notFollowing
+                            ? (t('rfWinnerNotFollower') || '⚠️ Победитель не фолловер — можно рерольнуть')
+                            : (t('rfWinnerFreshFollow') || '⚠️ Фоллов моложе минимума — можно рерольнуть');
+                        setTimeout(() => { note.style.display = 'none'; }, 12000);
+                    }
                 }
             }
-        } catch {}
+        } else {
+            rec.followAge = '—';
+        }
+        this._renderWinners();
+        this._persist();
     },
 
     _startWinnerTimer() {
@@ -626,19 +675,44 @@ const Raffle = {
         box.innerHTML = this.winners.slice(0, 4).map((w, i) => {
             const num = this.winners.length - i;
             const first = i === 0;
-            return `<div class="rf-winner-card ${first ? 'rf-winner-top' : ''}">
-                <div class="rf-winner-head">
-                  ${this._avatarHtml(w.name, w.color, first ? 38 : 28)}
-                  <div style="flex:1;min-width:0;">
-                    <div class="rf-winner-label">${t('rfWinnerNum') || 'Победитель'} #${num}${first ? ` · <span id="rf-w0-timer">0:00</span>` : ''}</div>
-                    <div class="rf-winner-name" style="color:${w.color};font-size:${first ? 17 : 13}px;">${w.badges || ''} ${w.name}</div>
-                  </div>
+            const loading = v => v === '…';
+            if (first) {
+                const badgeHtml = this._badgeHtml(w.badges) || `<span class="rf-role-pill" style="background:rgba(156,163,175,0.1);border-color:rgba(156,163,175,0.3);color:#9ca3af;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Зритель</span>`;
+                return `<div class="rf-winner-card rf-winner-top">
+                    <div class="rf-winner-crown">
+                        <span style="font-size:15px;">🏆</span>
+                        <span>${t('rfWinnerNum') || 'Победитель'} #${num}</span>
+                        <span style="margin-left:auto;color:var(--c-muted);">⏱ <span id="rf-w0-timer">0:00</span></span>
+                    </div>
+                    <div class="rf-winner-main">
+                        ${this._avatarHtml(w.name, w.color, 58)}
+                        <div style="flex:1;min-width:0;">
+                            <div class="rf-winner-name" style="color:${w.color};font-size:20px;">${w.name}</div>
+                            <div class="rf-winner-pills">${badgeHtml}</div>
+                        </div>
+                    </div>
+                    <div class="rf-winner-meta">
+                        <div class="rf-meta-pill">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.7;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            <span class="rf-meta-lbl">${t('rfAccAge') || 'Акк'}</span>
+                            <b class="${loading(w.accountAge) ? 'rf-meta-loading' : ''}">${w.accountAge}</b>
+                        </div>
+                        <div class="rf-meta-pill">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a970ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                            <span class="rf-meta-lbl">${t('rfFollow') || 'Фоллов'}</span>
+                            <b class="${loading(w.followAge) ? 'rf-meta-loading' : ''}">${w.followAge}</b>
+                        </div>
+                    </div>
+                    <div class="rf-winner-msgs-scroll">${(w.msgs && w.msgs.length) ? w.msgs.map(m => `<div class="rf-winner-msg" style="border-left-color:${w.color}66;"><span style="color:${w.color};font-weight:700;">${w.name}:</span> ${Emotes.parse(m.text)}<div class="rf-winner-msg-time">⏱ ${t('rfRepliedIn') || 'через'} ${this._fmtDelta(m.at - w.at)}</div></div>`).join('') : `<div class="rf-winner-msg rf-winner-msg-wait">${t('rfWaitingMsg') || 'Ждём сообщение победителя…'}</div>`}</div>
+                </div>`;
+            }
+            return `<div class="rf-winner-card rf-winner-past">
+                ${this._avatarHtml(w.name, w.color, 28)}
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:9px;color:var(--c-gold);font-weight:800;text-transform:uppercase;letter-spacing:.08em;">#${num}</div>
+                    <div class="rf-winner-name" style="color:${w.color};font-size:12px;">${w.name}</div>
                 </div>
-                ${first ? `<div class="rf-winner-meta">
-                    <span>📅 ${t('rfAccAge') || 'Аккаунту'}: <b>${w.accountAge}</b></span>
-                    <span>💜 ${t('rfFollow') || 'Фоллов'}: <b>${w.followAge}</b></span>
-                </div>` : ''}
-                ${(w.msgs && w.msgs.length) ? w.msgs.map(m => `<div class="rf-winner-msg" style="border-left-color:${w.color}66;"><span style="color:${w.color};font-weight:700;">${w.name}:</span> ${Emotes.parse(m.text)}<div class="rf-winner-msg-time">⏱ ${t('rfRepliedIn') || 'через'} ${this._fmtDelta(m.at - w.at)}</div></div>`).join('') : (first ? `<div class="rf-winner-msg rf-winner-msg-wait">${t('rfWaitingMsg') || 'Ждём сообщение победителя…'}</div>` : '')}
+                <div>${this._badgeHtml(w.badges)}</div>
             </div>`;
         }).join('');
         if (this.winners.length) this._startWinnerTimer();
@@ -672,6 +746,23 @@ const Raffle = {
         this._persist();
     },
 
+    _showSettingsScrim(show) {
+        const scrim = document.getElementById('rf-settings-scrim');
+        if (scrim) scrim.classList.toggle('show', show);
+    },
+
+    _updateSpinWrap(mode) {
+        const wrap = document.getElementById('rf-spin-sec-wrap');
+        if (wrap) wrap.style.opacity = mode === 'instant' ? '0.35' : '1';
+    },
+
+    setPickMode(mode) {
+        document.querySelectorAll('.rf-mode-card').forEach(el => el.classList.toggle('selected', el.dataset.mode === mode));
+        this._updateSpinWrap(mode);
+        this.readSettings();
+        Sound.click();
+    },
+
     toggleSettings() {
         Sound.click();
         const p = document.getElementById('rf-settings-panel');
@@ -679,6 +770,7 @@ const Raffle = {
         const show = p.style.display === 'none' || !p.style.display;
         if (!show) this.readSettings();
         p.style.display = show ? 'block' : 'none';
+        this._showSettingsScrim(show);
         if (show) { const r = document.getElementById('rf-rules-panel'); if (r) r.style.display = 'none'; }
     },
 

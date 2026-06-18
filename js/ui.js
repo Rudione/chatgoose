@@ -123,9 +123,32 @@ const UI = {
         if (fabFaq) fabFaq.style.display = id === 'roulette' ? 'none' : '';
         if (fabRules) fabRules.style.display = id === 'roulette' ? 'none' : '';
         const histPanel = document.getElementById('history-panel');
-        if (histPanel && id !== 'game' && id !== 'final') histPanel.style.display = 'none';
+        if (histPanel) histPanel.style.display = (id === 'game' || id === 'final') ? 'block' : 'none';
         const hudEl = document.getElementById('hud');
         if (hudEl && id !== 'game' && id !== 'final') hudEl.style.display = 'none';
+
+        const levEl = document.getElementById('live-events');
+        const levScenes = new Set(['game','final','lastcall-checklist','lastcall-game','lastcall-result','roast-checklist','roast-collect','roast-game','roast-result','oracle-checklist','oracle-question','oracle-game','oracle-postfact','oracle-result','oracle-leaderboard','roulette']);
+        if (levEl) levEl.style.display = levScenes.has(id) ? 'flex' : 'none';
+
+        const footerLabels = {
+            roulette: 'Розыгрыш-рулетка',
+            'lastcall-checklist': 'Последнее слово',
+            'lastcall-game': 'Последнее слово',
+            'lastcall-result': 'Последнее слово',
+            'roast-checklist': 'Роастинг чата',
+            'roast-collect': 'Роастинг чата',
+            'roast-game': 'Роастинг чата',
+            'roast-result': 'Роастинг чата',
+            'oracle-checklist': 'Оракул',
+            'oracle-question': 'Оракул',
+            'oracle-game': 'Оракул',
+            'oracle-postfact': 'Оракул',
+            'oracle-result': 'Оракул',
+            'oracle-leaderboard': 'Оракул',
+        };
+        const footerLabel = document.getElementById('app-footer-label');
+        if (footerLabel) footerLabel.textContent = footerLabels[id] || 'Угадай зрителя по сообщению';
     },
 
     openModal(id) {

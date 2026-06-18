@@ -180,11 +180,12 @@ window.app = {
             if (self) return;
             const name = tags['display-name'] || tags['username'];
             const lm = m.toLowerCase();
-            if ((tags.mod || tags.badges?.broadcaster || tags.badges?.moderator) && lm.startsWith('!s ')) {
-                const msg = m.slice(3).trim();
-                if (this.state.active && msg) LiveEvents.show(`<div class="lev-head" style="color:var(--c-accent2);">${t('eventModPrefix')}${name}${t('eventModSuffix')}</div><div style="font-size:13px;">${Emotes.parse(msg)}</div>`, 'event-mod', 9000, true);
+            if ((tags.mod || tags.badges?.broadcaster || tags.badges?.moderator) && lm.startsWith('!say ')) {
+                const msg = m.slice(5).trim();
+                if (msg) LiveEvents.show(`<div class="lev-head" style="color:var(--c-accent2);">${t('eventModPrefix')}${name}${t('eventModSuffix')}</div><div style="font-size:13px;">${Emotes.parse(msg)}</div>`, 'event-mod', 9000, true);
                 return;
             }
+            if (window.Raffle) Raffle.onMessage(name, m, tags);
             if (m.startsWith('!') || m.length < 2) return;
             if (BANNED.some(w => lm.includes(w))) return;
             const url = extractUrl(m);
@@ -193,7 +194,6 @@ window.app = {
             if (window.LastCall && LastCall.isActive) LastCall.onMessage(name, m, tags);
             if (window.Roast    && Roast.isCollecting) Roast.onMessage(name, m, tags);
             if (window.Oracle   && Oracle.isCollecting) Oracle.onMessage(name, m, tags);
-            if (window.Raffle) Raffle.onMessage(name, m, tags);
 
             if (!this.state.active && this._collectingMessages) {
                 if (this.config.linksOnly && !url) return;
