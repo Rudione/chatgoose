@@ -115,13 +115,20 @@ const UI = {
         const btnExit = document.getElementById('btn-exit-game');
         const isGame = id === 'game' || id === 'final' || id === 'lastcall-game' || id === 'roast-collect' || id === 'roast-game' || id === 'oracle-question' || id === 'oracle-game' || id === 'oracle-postfact';
 
-        if (btnSettings) btnSettings.style.display = (id === 'mode-select' || id === 'warning-pre' || id === 'loading' || id === 'lastcall-checklist' || id === 'roast-checklist' || id === 'oracle-checklist') ? 'flex' : 'none';
+        const nonChatgoose = new Set(['mode-select', 'roulette',
+            'lastcall-checklist', 'lastcall-game', 'lastcall-result',
+            'roast-checklist', 'roast-collect', 'roast-game', 'roast-result',
+            'oracle-checklist', 'oracle-question', 'oracle-game', 'oracle-postfact', 'oracle-result', 'oracle-leaderboard']);
+
+        if (btnSettings) btnSettings.style.display = (id === 'warning-pre' || id === 'loading') ? 'flex' : 'none';
         if (topCtrl) topCtrl.style.display = (isGame || id === 'roulette') ? 'none' : 'flex';
         if (btnExit) btnExit.style.display = isGame ? 'flex' : 'none';
         const fabFaq = document.getElementById('fab-faq');
         const fabRules = document.getElementById('fab-rules');
-        if (fabFaq) fabFaq.style.display = id === 'roulette' ? 'none' : '';
-        if (fabRules) fabRules.style.display = id === 'roulette' ? 'none' : '';
+        if (fabFaq) fabFaq.style.display = nonChatgoose.has(id) ? 'none' : '';
+        if (fabRules) fabRules.style.display = nonChatgoose.has(id) ? 'none' : '';
+        const chFab = document.getElementById('rf-channel-fab');
+        if (chFab) chFab.style.display = id === 'roulette' ? 'flex' : 'none';
         const histPanel = document.getElementById('history-panel');
         if (histPanel) histPanel.style.display = (id === 'game' || id === 'final') ? 'block' : 'none';
         const hudEl = document.getElementById('hud');

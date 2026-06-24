@@ -129,7 +129,7 @@ window.app = {
         Emotes.load(ch);
 
         if (window.Roast) Roast.beginCollecting();
-        this.client = new tmi.Client({ connection: { reconnect: true, secure: true, maxReconnectAttempts: Infinity, reconnectInterval: 2000 }, channels: [ch] });
+        this.client = new tmi.Client({ channels: [ch] });
         this.client.connect().catch(e => { alert(t('errConnecting') + e); UI.switchScene('login'); });
         this._bindChatEvents();
         if (this._pendingMode) {
@@ -137,6 +137,28 @@ window.app = {
             this._pendingMode = null;
             setTimeout(() => this.selectMode(pm), 150);
         }
+    },
+
+    changeChannel(raw) {
+        const ch = (raw || '').trim().replace(/^#/, '').replace(/^https?:\/\/(www\.)?twitch\.tv\//i, '').split(/[\/?]/)[0].toLowerCase();
+        if (!ch || ch === (this._connectedChannel || '').toLowerCase()) return false;
+        try { if (this.client) { this.client.disconnect(); } } catch (e) {}
+        this._connectedChannel = ch;
+        const ci = document.getElementById('channel-input'); if (ci) ci.value = ch;
+        const nm = document.getElementById('ms-channel-name'); if (nm) nm.innerText = ch;
+        Settings.save();
+        Emotes.map = new Map(); Emotes.set7tv = new Map(); Emotes.pfpMap = new Map();
+        Emotes.load(ch);
+        this.client = new tmi.Client({ channels: [ch] });
+        this.client.connect().catch(() => {});
+        this._bindChatEvents();
+        if (window.Raffle) Raffle.onChannelChanged(ch);
+        Sound.click();
+        return true;
+    },
+
+    ensureConnected() {
+        try { if (this.client && this.client.forceCheck) this.client.forceCheck(); } catch (e) {}
     },
 
     selectMode(mode) {
@@ -278,6 +300,9 @@ window.app = {
         if (ring) ring.style.strokeDashoffset = 251 - (p * 251);
         if (countEl) countEl.innerText = c;
 
+        const onLoading = !document.getElementById('scene-loading').classList.contains('hidden');
+        if (!onLoading) return;
+
         const bs = document.getElementById('btn-start');
         const be = document.getElementById('btn-early-start');
         const earlyWrap = document.getElementById('loading-btn-early-wrap');
@@ -418,6 +443,7 @@ window.app = {
         this._modePlayCount = {};
         this._finalChecked = false; this._pendingTimers = [];
 
+        this._collectingMessages = false;
         document.getElementById('scene-countdown').classList.add('hidden');
         document.getElementById('hud').style.display = 'flex';
         document.getElementById('history-panel').style.display = 'block';
@@ -960,6 +986,9 @@ window.app = {
             setTimeout(() => app.connect(), 60);
         }
     }
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) app.ensureConnected(); });
+    window.addEventListener('online', () => app.ensureConnected());
+    window.addEventListener('focus', () => app.ensureConnected());
     const sl = document.getElementById('users-slider'); if (sl) UI.updateSlider(sl);
     const ci = document.getElementById('channel-input');
     if (ci) ci.addEventListener('keydown', e => { if (e.key === 'Enter') app.connect(); });

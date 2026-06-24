@@ -29,6 +29,11 @@
 </button>
 
 <div id="fab-stack" style="position:fixed;top:18px;right:18px;z-index:61;display:flex;gap:8px;align-items:center;">
+  <div id="rf-channel-fab" onclick="Raffle.openChannelSwitch()" title="Сменить канал" style="display:none;align-items:center;gap:8px;background:rgba(20,20,52,0.66);backdrop-filter:blur(18px);border:1px solid var(--c-border);border-radius:50px;padding:6px 13px 6px 11px;cursor:pointer;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--c-accent)" style="flex-shrink:0;"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
+    <span style="font-size:12px;font-weight:700;color:var(--c-accent);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="rf-channel-name">—</span>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--c-muted)" stroke-width="2.5" style="flex-shrink:0;"><path d="M9 18l6-6-6-6"/></svg>
+  </div>
   <div style="display:flex;gap:3px;align-items:center;background:rgba(20,20,52,0.66);backdrop-filter:blur(18px);border:1px solid var(--c-border);border-radius:50px;padding:5px 10px 5px 8px;">
     <span style="font-size:15px;opacity:.65;">🌐</span>
     <button data-lang="ru" onclick="switchLang('ru')" class="lang-btn active">RU</button>
@@ -99,7 +104,7 @@
         <div style="width:64px;text-align:center;font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;" data-i18n="modeColWeight">% шанс</div>
         <div style="width:56px;text-align:center;font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;" data-i18n="modeColRounds">раундов</div>
       </div>
-      <div id="modes-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+      <div id="modes-grid" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;">
         <div class="mode-row glass2"><label class="toggle"><input type="checkbox" id="mode-classic" checked onchange="Settings.onModeToggle()"><div class="toggle-slider"></div></label><div class="mode-row-text"><div data-i18n="modeClassic">🎯 Классика</div><div data-i18n="modeClassicDesc">Угадай автора</div></div><div class="mode-row-w"><input type="number" id="mw-classic" min="1" max="97" value="25" onchange="Settings.onWeightEdit('classic')"><span>%</span></div><input type="number" id="mr-classic" min="0" max="99" placeholder="∞" class="mode-row-r" onchange="Settings.read()"></div>
         <div class="mode-row glass2"><label class="toggle"><input type="checkbox" id="mode-tf" checked onchange="Settings.onModeToggle()"><div class="toggle-slider"></div></label><div class="mode-row-text"><div data-i18n="modeTF">🤔 Правда/Фейк</div><div data-i18n="modeTFDesc">Подмена слова</div></div><div class="mode-row-w"><input type="number" id="mw-tf" min="1" max="97" value="20" onchange="Settings.onWeightEdit('tf')"><span>%</span></div><input type="number" id="mr-tf" min="0" max="99" placeholder="∞" class="mode-row-r" onchange="Settings.read()"></div>
         <div class="mode-row glass2"><label class="toggle"><input type="checkbox" id="mode-censor" checked onchange="Settings.onModeToggle()"><div class="toggle-slider"></div></label><div class="mode-row-text"><div data-i18n="modeCensor">🔤 Пропущ. слово</div><div data-i18n="modeCensorDesc">Что между слов</div></div><div class="mode-row-w"><input type="number" id="mw-censor" min="1" max="97" value="20" onchange="Settings.onWeightEdit('censor')"><span>%</span></div><input type="number" id="mr-censor" min="0" max="99" placeholder="∞" class="mode-row-r" onchange="Settings.read()"></div>
@@ -321,9 +326,6 @@
       </div>
     </div>
 
-    <div style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;opacity:.7;" onclick="app.openSettings()">
-      <span>⚙️</span><span style="font-size:12px;color:var(--c-muted);font-weight:600;" data-i18n="settingsLink">Настройки игры, режимы и таймер</span>
-    </div>
   </div>
 
   
@@ -535,7 +537,7 @@
   
 
   
-  <div id="scene-lastcall-checklist" class="scene hidden" style="max-width:580px;width:100%;">
+  <div id="scene-lastcall-checklist" class="scene hidden" style="max-width:760px;width:100%;">
     <div class="liquid-glass" style="padding:22px 26px;margin-bottom:10px;position:relative;overflow:hidden;">
       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#65d0ff,var(--c-accent));"></div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
@@ -626,7 +628,7 @@
       </div>
     </div>
   </div>
-  <div id="scene-lastcall-checklist-actions" class="hidden" style="width:100%;max-width:580px;margin-top:10px;">
+  <div id="scene-lastcall-checklist-actions" class="hidden" style="width:100%;max-width:760px;margin-top:10px;">
     <button onclick="LastCall.start()" class="btn-primary" style="width:100%;padding:17px;font-size:18px;" data-i18n="lcStartBtn">🚀 ЗАПУСТИТЬ ТАЙМЕР</button>
   </div>
 
@@ -692,17 +694,17 @@
   
 
   
-  <div id="scene-roast-checklist" class="scene hidden" style="max-width:600px;width:100%;">
-    <div class="liquid-glass" style="padding:22px 26px;margin-bottom:10px;position:relative;overflow:hidden;">
+  <div id="scene-roast-checklist" class="scene hidden" style="max-width:980px;width:100%;">
+    <div class="liquid-glass roast-dash" style="padding:22px 26px;margin-bottom:10px;position:relative;overflow:hidden;">
       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#ff79df,var(--c-gold));"></div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+      <div class="roast-dash-full" style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
         <button onclick="app.backToModeSelect()" style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
           <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
         </button>
         <div style="font-size:11px;color:var(--c-muted);font-weight:600;" data-i18n="roastTitle">🔮 Chat Roast AI · Психоанализ чата</div>
       </div>
-      <div class="font-display" style="font-size:22px;font-weight:700;margin-bottom:8px;" data-i18n="roastHowTitle">Как работает</div>
-      <div style="font-size:13px;color:var(--c-muted);line-height:1.6;margin-bottom:14px;" data-i18n="roastHowDesc">1) Сообщения чата собираются непрерывно с момента подключения. 2) Когда готов — жми «Анализировать». AI прочитает весь чат за стрим. 3) AI навешивает на юзеров характеристики: душнила, красавчик, философ. Угадай по описанию.</div>
+      <div class="font-display roast-dash-full" style="font-size:22px;font-weight:700;margin-bottom:8px;" data-i18n="roastHowTitle">Как работает</div>
+      <div class="roast-dash-full" style="font-size:13px;color:var(--c-muted);line-height:1.6;margin-bottom:14px;" data-i18n="roastHowDesc">1) Сообщения чата собираются непрерывно с момента подключения. 2) Когда готов — жми «Анализировать». AI прочитает весь чат за стрим. 3) AI навешивает на юзеров характеристики: душнила, красавчик, философ. Угадай по описанию.</div>
 
       
       <div class="glass2" style="padding:12px 14px;margin-bottom:10px;background:linear-gradient(135deg,rgba(255,121,223,0.06),rgba(139,125,255,0.04));border-color:rgba(255,121,223,0.2);">
@@ -933,12 +935,12 @@
         <div style="font-size:10px;color:var(--c-muted);margin-top:8px;line-height:1.5;" data-i18n="roastKeyHint">🔒 Ключи хранятся только локально в твоём браузере. Никуда не отправляются кроме выбранного API.</div>
       </div>
 
-      <div class="glass2" style="padding:11px;border:1px solid rgba(255,212,112,0.32);background:rgba(255,212,112,0.06);">
+      <div class="glass2 roast-dash-full" style="padding:11px;border:1px solid rgba(255,212,112,0.32);background:rgba(255,212,112,0.06);">
         <div style="font-size:11px;color:var(--c-gold);font-weight:700;display:flex;align-items:center;gap:6px;"><span>⚠️</span><span data-i18n="roastWarn">Это юмористический режим — AI может ошибаться и шутить. Не воспринимай результаты всерьёз.</span></div>
       </div>
     </div>
   </div>
-  <div id="scene-roast-checklist-actions" class="hidden" style="width:100%;max-width:600px;margin-top:10px;">
+  <div id="scene-roast-checklist-actions" class="hidden" style="width:100%;max-width:980px;margin-top:10px;">
     <button onclick="Roast.beginAnalysis()" class="btn-primary" style="width:100%;padding:17px;font-size:18px;" data-i18n="roastAnalyzeBtn">🔮 АНАЛИЗИРОВАТЬ ЧАТ СЕЙЧАС</button>
     <div style="text-align:center;font-size:10px;color:var(--c-muted);margin-top:7px;" data-i18n="roastAnalyzeHint">Можно нажать в любой момент — чат собирается с момента подключения</div>
   </div>
@@ -992,7 +994,7 @@
   
 
   
-  <div id="scene-oracle-checklist" class="scene hidden" style="max-width:580px;width:100%;">
+  <div id="scene-oracle-checklist" class="scene hidden" style="max-width:780px;width:100%;">
     <div class="liquid-glass" style="padding:22px 26px;margin-bottom:10px;position:relative;overflow:hidden;">
       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#52ffb6,#65d0ff,var(--c-accent));"></div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
@@ -1075,7 +1077,7 @@
       </label>
     </div>
   </div>
-  <div id="scene-oracle-checklist-actions" class="hidden" style="width:100%;max-width:580px;margin-top:10px;">
+  <div id="scene-oracle-checklist-actions" class="hidden" style="width:100%;max-width:780px;margin-top:10px;">
     <button onclick="Oracle.startSession()" class="btn-primary" style="width:100%;padding:17px;font-size:18px;" data-i18n="orStartSession">📊 НАЧАТЬ СЕССИЮ</button>
   </div>
 
@@ -1214,7 +1216,7 @@
   </div>
 
   
-  <div id="scene-roulette" class="scene hidden" style="max-width:1240px;width:100%;position:relative;">
+  <div id="scene-roulette" class="scene hidden" style="max-width:1300px;width:100%;position:relative;">
 
     <div class="rf-topbar">
       <div class="liquid-glass" style="flex-shrink:0;">
@@ -1239,24 +1241,34 @@
     </div>
 
     <div class="rf-grid">
-      <div class="liquid-glass" style="padding:16px;display:flex;flex-direction:column;gap:10px;height:clamp(440px,60vh,580px);overflow-y:auto;">
+      <div class="liquid-glass" style="padding:16px;display:flex;flex-direction:column;gap:10px;height:clamp(460px,62vh,600px);overflow-y:auto;">
         <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.1em;" data-i18n="rfWinnersFeed">🏆 Победители</div>
         <div id="rf-verify-note" style="display:none;font-size:11px;color:var(--c-gold);background:rgba(255,212,112,0.08);border:1px solid rgba(255,212,112,0.3);border-radius:9px;padding:8px 11px;"></div>
         <div id="rf-winners-feed" style="display:flex;flex-direction:column;gap:10px;"></div>
       </div>
 
-      <div class="liquid-glass" style="padding:22px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;height:clamp(440px,60vh,580px);">
-        <div style="display:flex;align-items:center;gap:8px;">
+      <div class="liquid-glass rf-control-panel" style="padding:20px 16px;display:flex;flex-direction:column;align-items:stretch;gap:12px;height:clamp(460px,62vh,600px);overflow-y:auto;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
           <span id="rf-status-dot" class="rf-status-dot"></span>
           <span style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.1em;" data-i18n="rfControl">Управление</span>
         </div>
-        <button id="rf-btn-open" onclick="Raffle.toggleOpen()" class="btn-primary rf-btn-main">▶ Открыть рафл</button>
-        <button onclick="Raffle.draw()" class="rf-btn-draw">🎰 <span data-i18n="rfDrawBtn">КРУТИТЬ РУЛЕТКУ</span></button>
-        <button onclick="Raffle.reroll()" class="btn-ghost" style="width:100%;padding:11px;font-size:13px;" data-i18n="rfRerollBtn">🔄 Реролл</button>
-        <button onclick="Raffle.restartRaffle()" class="btn-ghost" style="width:100%;padding:11px;font-size:13px;color:var(--c-gold);border-color:rgba(255,212,112,0.3);" data-i18n="rfRestartBtn">♻️ Рестарт рафла</button>
+        <div class="rf-ctrl-btns">
+          <button id="rf-btn-open" onclick="Raffle.toggleOpen()" class="rf-ctrl-btn rf-ctrl-open">▶ Открыть рафл</button>
+          <button onclick="Raffle.draw(false)" class="rf-ctrl-btn rf-ctrl-draw"><svg class="rf-btn-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg> <span data-i18n="rfDrawBtn">КРУТИТЬ РУЛЕТКУ</span></button>
+          <button onclick="Raffle.reroll()" class="rf-ctrl-btn rf-ctrl-ghost"><svg class="rf-btn-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg> <span data-i18n="rfRerollBtn">Реролл</span></button>
+          <button onclick="Raffle.restartRaffle()" class="rf-ctrl-btn rf-ctrl-ghost rf-ctrl-gold"><svg class="rf-btn-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-9.36L3 8"/></svg> <span data-i18n="rfRestartBtn">Рестарт рафла</span></button>
+          <button onclick="Raffle.toggleSettings()" class="rf-ctrl-btn rf-ctrl-settings">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span data-i18n="rfSettingsBtn">Настройки</span>
+          </button>
+        </div>
+        <div class="rf-summary-wrap">
+          <div class="rf-summary-title" data-i18n="rfSummaryTitle">Что сейчас в розыгрыше</div>
+          <div id="rf-summary" class="rf-summary"></div>
+        </div>
       </div>
 
-      <div class="liquid-glass" style="padding:0;display:flex;flex-direction:column;overflow:hidden;height:clamp(440px,60vh,580px);">
+      <div class="liquid-glass" style="padding:0;display:flex;flex-direction:column;overflow:hidden;height:clamp(460px,62vh,600px);">
         <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;">
           <span style="font-family:'Clash Display',sans-serif;font-weight:600;font-size:13px;"><span data-i18n="rfEntrants">Участники</span>: <span id="rf-entrants-count" class="grad-text">0</span></span>
           <span id="rf-entrants-more" style="font-size:10px;color:var(--c-muted);"></span>
@@ -1298,17 +1310,17 @@
           <div class="rf-set-label" data-i18n="rfPickMode">🎮 Режим розыгрыша</div>
           <div class="rf-mode-cards">
             <div class="rf-mode-card selected" data-mode="roulette" onclick="Raffle.setPickMode('roulette')">
-              <span class="rf-mode-card-ico">🎰</span>
+              <span class="rf-mode-card-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
               <span class="rf-mode-card-name" data-i18n="rfPickRoulette">Рулетка</span>
               <span class="rf-mode-card-desc">CS:GO крутилка</span>
             </div>
             <div class="rf-mode-card" data-mode="elimination" onclick="Raffle.setPickMode('elimination')">
-              <span class="rf-mode-card-ico">⚔️</span>
+              <span class="rf-mode-card-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"/><line x1="5" y1="14" x2="9" y2="18"/><line x1="7" y1="17" x2="4" y2="20"/><line x1="3" y1="19" x2="5" y2="21"/></svg></span>
               <span class="rf-mode-card-name" data-i18n="rfPickElim">Выбывание</span>
               <span class="rf-mode-card-desc">Батл-рояль</span>
             </div>
             <div class="rf-mode-card" data-mode="instant" onclick="Raffle.setPickMode('instant')">
-              <span class="rf-mode-card-ico">⚡</span>
+              <span class="rf-mode-card-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
               <span class="rf-mode-card-name" data-i18n="rfPickInstant">Мгновенно</span>
               <span class="rf-mode-card-desc">Без анимации</span>
             </div>
@@ -1405,6 +1417,25 @@
     <div class="rf-confirm-btns">
       <button onclick="Raffle.closeRerollModal()" class="btn-ghost" style="flex:1;padding:13px;font-size:14px;">Отмена</button>
       <button onclick="Raffle.confirmReroll()" class="btn-primary" style="flex:1;padding:13px;font-size:14px;">🎰 Реролл!</button>
+    </div>
+  </div>
+</div>
+
+<div id="rf-winner-modal" class="rf-wc-overlay" onclick="if(event.target===this)Raffle.closeWinnerCard()" style="display:none;">
+  <div class="rf-wc-box liquid-glass">
+    <div id="rf-winner-modal-body"></div>
+  </div>
+</div>
+
+<div id="rf-channel-modal" class="rf-confirm-overlay" onclick="if(event.target===this)Raffle.closeChannelSwitch()" style="display:none;">
+  <div class="rf-confirm-box liquid-glass" style="max-width:380px;">
+    <div class="rf-confirm-icon">📺</div>
+    <div class="rf-confirm-title" data-i18n="rfChangeChannelTitle">Сменить канал</div>
+    <div class="rf-confirm-sub" data-i18n="rfChangeChannelSub">Розыгрыш переключится на новый канал. Участники текущего розыгрыша сохранятся.</div>
+    <input type="text" id="rf-channel-input" class="roast-key-input" placeholder="twitch_channel" autocomplete="off" spellcheck="false" style="width:100%;box-sizing:border-box;font-size:15px;text-align:center;font-weight:700;" onkeydown="if(event.key==='Enter')Raffle.confirmChannelSwitch()">
+    <div class="rf-confirm-btns">
+      <button onclick="Raffle.closeChannelSwitch()" class="btn-ghost" style="flex:1;padding:13px;font-size:14px;" data-i18n="cancelBtn">Отмена</button>
+      <button onclick="Raffle.confirmChannelSwitch()" class="btn-primary" style="flex:1;padding:13px;font-size:14px;" data-i18n="rfChangeChannelBtn">📺 Сменить</button>
     </div>
   </div>
 </div>
