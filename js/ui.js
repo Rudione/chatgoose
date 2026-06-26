@@ -94,7 +94,7 @@ const UI = {
             'lastcall-checklist','lastcall-game','lastcall-result',
             'roast-checklist','roast-collect','roast-game','roast-result',
             'oracle-checklist','oracle-question','oracle-game','oracle-postfact','oracle-result','oracle-leaderboard',
-            'roulette'];
+            'roulette','songbattle'];
         allScenes.forEach(s => {
             const el = document.getElementById('scene-' + s);
             if (el) el.classList.add('hidden');
@@ -115,13 +115,13 @@ const UI = {
         const btnExit = document.getElementById('btn-exit-game');
         const isGame = id === 'game' || id === 'final' || id === 'lastcall-game' || id === 'roast-collect' || id === 'roast-game' || id === 'oracle-question' || id === 'oracle-game' || id === 'oracle-postfact';
 
-        const nonChatgoose = new Set(['mode-select', 'roulette',
+        const nonChatgoose = new Set(['mode-select', 'roulette', 'songbattle',
             'lastcall-checklist', 'lastcall-game', 'lastcall-result',
             'roast-checklist', 'roast-collect', 'roast-game', 'roast-result',
             'oracle-checklist', 'oracle-question', 'oracle-game', 'oracle-postfact', 'oracle-result', 'oracle-leaderboard']);
 
         if (btnSettings) btnSettings.style.display = (id === 'warning-pre' || id === 'loading') ? 'flex' : 'none';
-        if (topCtrl) topCtrl.style.display = (isGame || id === 'roulette') ? 'none' : 'flex';
+        if (topCtrl) topCtrl.style.display = (isGame || id === 'roulette' || id === 'songbattle') ? 'none' : 'flex';
         if (btnExit) btnExit.style.display = isGame ? 'flex' : 'none';
         const fabFaq = document.getElementById('fab-faq');
         const fabRules = document.getElementById('fab-rules');
@@ -129,17 +129,22 @@ const UI = {
         if (fabRules) fabRules.style.display = nonChatgoose.has(id) ? 'none' : '';
         const chFab = document.getElementById('rf-channel-fab');
         if (chFab) chFab.style.display = id === 'roulette' ? 'flex' : 'none';
+        const sbFab = document.getElementById('sb-channel-fab');
+        if (sbFab) sbFab.style.display = id === 'songbattle' ? 'flex' : 'none';
+        const sbNew = document.getElementById('sb-newgame-fab');
+        if (sbNew) sbNew.style.display = id === 'songbattle' ? 'flex' : 'none';
         const histPanel = document.getElementById('history-panel');
         if (histPanel) histPanel.style.display = (id === 'game' || id === 'final') ? 'block' : 'none';
         const hudEl = document.getElementById('hud');
         if (hudEl && id !== 'game' && id !== 'final') hudEl.style.display = 'none';
 
         const levEl = document.getElementById('live-events');
-        const levScenes = new Set(['game','final','lastcall-checklist','lastcall-game','lastcall-result','roast-checklist','roast-collect','roast-game','roast-result','oracle-checklist','oracle-question','oracle-game','oracle-postfact','oracle-result','oracle-leaderboard','roulette']);
+        const levScenes = new Set(['game','final','lastcall-checklist','lastcall-game','lastcall-result','roast-checklist','roast-collect','roast-game','roast-result','oracle-checklist','oracle-question','oracle-game','oracle-postfact','oracle-result','oracle-leaderboard','roulette','songbattle']);
         if (levEl) levEl.style.display = levScenes.has(id) ? 'flex' : 'none';
 
         const footerLabels = {
             roulette: 'Розыгрыш-рулетка',
+            songbattle: 'СонгСаша',
             'lastcall-checklist': 'Последнее слово',
             'lastcall-game': 'Последнее слово',
             'lastcall-result': 'Последнее слово',

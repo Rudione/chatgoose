@@ -467,12 +467,10 @@ const Raffle = {
         const color = rec.color || '#9ca3af';
         const row = (m, isNew) => `<div class="rf-chat-msg${isNew ? ' rf-chat-msg-new' : ''}"><span class="rf-chat-time">${this._fmtClock(m.at)}</span><span class="rf-chat-body"><span class="rf-chat-name" style="color:${color};">${rec.name}</span> ${Emotes.parse(m.text)}</span></div>`;
         let html = '';
-        if (!opts.freshOnly) {
-            const old = (rec._oldMsgs || []).filter(m => m && m.text);
-            if (old.length) html += old.map(m => row(m, false)).join('');
-            else if (rec._logsLoading) html += `<div class="rf-chat-hint">${t('rfChatLoadingHist') || 'Загружаем историю чата…'}</div>`;
-            html += `<div class="rf-chat-newdiv"><span>NEW</span></div>`;
-        }
+        const old = (rec._oldMsgs || []).filter(m => m && m.text);
+        if (old.length) html += old.map(m => row(m, false)).join('');
+        else if (rec._logsLoading) html += `<div class="rf-chat-hint">${t('rfChatLoadingHist') || 'Загружаем историю чата…'}</div>`;
+        html += `<div class="rf-chat-newdiv"><span>NEW</span></div>`;
         const fresh = (rec.msgs || []).filter(m => m && m.text);
         if (fresh.length) html += fresh.map(m => row(m, true)).join('');
         else html += `<div class="rf-chat-wait"><span class="rf-chat-wait-dot"></span>${t('rfWaitNewMsg') || 'ждём новое сообщение'}</div>`;
@@ -836,7 +834,7 @@ const Raffle = {
                             <b class="${loading(w.followAge) ? 'rf-meta-loading' : ''}">${w.followAge}</b>
                         </div>
                     </div>
-                    <div class="rf-winner-msgs-scroll">${this._renderChatHistory(w, { compact: true, freshOnly: true })}</div>
+                    <div class="rf-winner-msgs-scroll">${this._renderChatHistory(w, { compact: true })}</div>
                 </div>`;
             }
             const msgCount = (w.msgs && w.msgs.length) ? `<span class="rf-winner-past-msgs">${this._msgIco(11, 'currentColor')} ${w.msgs.length}</span>` : '';

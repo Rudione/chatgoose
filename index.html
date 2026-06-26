@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 <canvas id="bg-canvas"></canvas>
@@ -34,6 +34,15 @@
     <span style="font-size:12px;font-weight:700;color:var(--c-accent);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="rf-channel-name">—</span>
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--c-muted)" stroke-width="2.5" style="flex-shrink:0;"><path d="M9 18l6-6-6-6"/></svg>
   </div>
+  <div id="sb-channel-fab" onclick="SongBattle.openChannelSwitch()" title="Сменить канал" style="display:none;align-items:center;gap:8px;background:rgba(20,20,52,0.66);backdrop-filter:blur(18px);border:1px solid var(--c-border);border-radius:50px;padding:6px 13px 6px 11px;cursor:pointer;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--c-accent)" style="flex-shrink:0;"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
+    <span style="font-size:12px;font-weight:700;color:var(--c-accent);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="sb-channel-name">—</span>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--c-muted)" stroke-width="2.5" style="flex-shrink:0;"><path d="M9 18l6-6-6-6"/></svg>
+  </div>
+  <button id="sb-newgame-fab" onclick="SongBattle.newBattle()" title="Начать новую игру" style="display:none;align-items:center;gap:7px;background:rgba(20,20,52,0.66);backdrop-filter:blur(18px);border:1px solid var(--c-border);border-radius:50px;padding:7px 14px 7px 12px;cursor:pointer;color:var(--c-text);font-family:'Clash Display',sans-serif;font-weight:700;font-size:12px;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-green)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.4 2.6L3 8"/><path d="M3 4v4h4"/></svg>
+    <span data-i18n="sbNewGame">Новая игра</span>
+  </button>
   <div style="display:flex;gap:3px;align-items:center;background:rgba(20,20,52,0.66);backdrop-filter:blur(18px);border:1px solid var(--c-border);border-radius:50px;padding:5px 10px 5px 8px;">
     <span style="font-size:15px;opacity:.65;">🌐</span>
     <button data-lang="ru" onclick="switchLang('ru')" class="lang-btn active">RU</button>
@@ -229,6 +238,27 @@
 
     <div id="mode-cards" style="display:flex;flex-direction:column;gap:14px;">
       <div class="ms-top-duo">
+        <div class="ms-card ms-card-songsasha ms-hero-new" onclick="app.selectMode('songbattle')">
+          <div class="ms-card-bg ms-card-bg-6"></div>
+          <div class="ms-card-icon ms-ss-icon">
+            <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="url(#ssg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="ssg" x1="0" y1="0" x2="24" y2="24"><stop offset="0" stop-color="#8b7dff"/><stop offset="1" stop-color="#ff79df"/></linearGradient></defs><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div class="ms-card-title font-display">СОНГСАША</div>
+            <span class="ms-tag ms-tag-new" data-i18n="msTagNew">NEW</span>
+          </div>
+          <div class="ms-card-subtitle" style="color:var(--c-accent2);" data-i18n="msSsSub">Музыкальный турнир чата</div>
+          <div class="ms-card-desc" data-i18n="msSsDesc">Зрители кидают ссылки на треки (YouTube, Spotify, SoundCloud, Apple, Яндекс) — без повторов. Случайная сетка, встроенные плееры, голосование 1/2 в чате с таймером.</div>
+          <div class="ms-card-tags">
+            <span class="ms-tag" data-i18n="msSsTag">баттл треков</span>
+            <span class="ms-tag ms-tag-hot" data-i18n="msSsTagTour">турнир</span>
+          </div>
+          <div class="ms-card-cta" style="background:linear-gradient(135deg,rgba(139,125,255,0.2),rgba(255,121,223,0.14));border-color:rgba(255,121,223,0.45);">
+            <span data-i18n="msPlayBtn">Играть</span>
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+          </div>
+        </div>
+
         <div class="ms-card ms-card-roulette ms-hero-new" onclick="app.selectMode('roulette')">
           <div class="ms-card-bg ms-card-bg-5"></div>
           <div class="ms-card-icon">🎰</div>
@@ -1391,6 +1421,107 @@
     </div>
   </div>
 
+  <!-- ===================== СОНГСАША ===================== -->
+  <div id="scene-songbattle" class="scene hidden" style="max-width:1320px;width:100%;position:relative;">
+    <!-- полноэкранный реактивный фон + визуализатор по краям -->
+    <div id="sb-fx" class="sb-fx" aria-hidden="true">
+      <span class="sb-blob sb-blob-a"></span><span class="sb-blob sb-blob-b"></span><span class="sb-blob sb-blob-c"></span>
+      <canvas id="sb-viz-top" class="sb-viz-edge sb-viz-top"></canvas>
+      <canvas id="sb-viz-bottom" class="sb-viz-edge sb-viz-bottom"></canvas>
+    </div>
+
+    <div class="liquid-glass sb-topbar">
+      <button class="sb-iconbtn" onclick="app.backToModeSelect()" title="Назад"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-7-7 7-7"/></svg></button>
+      <div id="sb-tabbar" class="sb-tabbar hidden">
+        <button id="sb-tab-game-btn" class="sb-tabbtn on" onclick="SongBattle.setTab('game')" data-i18n="sbTabGame">Игра</button>
+        <button id="sb-tab-bracket-btn" class="sb-tabbtn" onclick="SongBattle.setTab('bracket')" data-i18n="sbTabBracket">Сетка</button>
+      </div>
+      <div class="sb-topbar-title">
+        <div class="font-display grad-text sb-topbar-name">СОНГСАША</div>
+        <div class="sb-topbar-sub" data-i18n="sbTagline">Турнир треков по заявкам из чата</div>
+      </div>
+    </div>
+
+    <!-- ЛОББИ -->
+    <div id="sb-view-lobby">
+      <div id="sb-lobby-wrap" class="sb-lobby-grid">
+        <div class="liquid-glass sb-panel sb-panel-left">
+          <div class="sb-join-card">
+            <div class="sb-join-line"><span data-i18n="sbType">Пиши</span> <span id="sb-join-word" class="sb-join-word">!song</span> <span data-i18n="sbTypeTail">в чат</span></div>
+            <div class="sb-join-example" id="sb-join-example"></div>
+          </div>
+          <div class="sb-progress">
+            <div class="sb-progress-head"><span data-i18n="sbCollected">Собрано треков</span><span class="sb-progress-count"><b id="sb-count" class="grad-text">0</b> <span id="sb-target">/ 16</span></span></div>
+            <div class="sb-progress-track"><div id="sb-progress-bar" class="sb-progress-fill"></div></div>
+          </div>
+          <button id="sb-start-btn" class="sb-start-btn" onclick="SongBattle.startBattle()" disabled>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <span class="sb-start-label">Ждём треки…</span>
+          </button>
+          <div class="sb-set-divider"><span class="sb-set-title" data-i18n="sbSettings">Настройки турнира</span></div>
+          <div id="sb-settings" class="sb-settings-inline"></div>
+        </div>
+        <div class="liquid-glass sb-panel sb-panel-right">
+          <div class="sb-list-head"><span data-i18n="sbParticipants">Участники</span></div>
+          <div id="sb-track-list" class="sb-track-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- БАТТЛ -->
+    <div id="sb-stage" class="hidden">
+      <!-- вкладка «Игра» -->
+      <div id="sb-tab-game">
+        <div id="sb-battle-head" class="sb-battle-head"></div>
+        <div id="sb-cards" class="sb-cards"></div>
+        <div id="sb-vote-controls" class="sb-vote-controls"></div>
+      </div>
+      <!-- вкладка «Сетка» -->
+      <div id="sb-tab-bracket" class="hidden">
+        <div class="sb-below-grid">
+          <div class="liquid-glass sb-below-panel sb-below-songs-panel">
+            <div class="sb-below-head"><span data-i18n="sbAllSongs">Все треки</span></div>
+            <div id="sb-below-songs" class="sb-below-songs"></div>
+          </div>
+          <div class="liquid-glass sb-below-panel sb-below-bracket-panel">
+            <div class="sb-below-head"><span data-i18n="sbTree">Турнирная сетка</span></div>
+            <div id="sb-below-bracket" class="sb-below-bracket"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- тосты СонгСаши (справа сверху) -->
+<div id="sb-toasts" class="sb-toasts"></div>
+
+<!-- смена канала -->
+<div id="sb-channel-modal" class="rf-confirm-overlay" onclick="if(event.target===this)SongBattle.closeChannelSwitch()" style="display:none;">
+  <div class="rf-confirm-box liquid-glass" style="max-width:380px;">
+    <div class="rf-confirm-icon">📺</div>
+    <div class="rf-confirm-title" data-i18n="sbChangeChannelTitle">Сменить канал</div>
+    <div class="rf-confirm-sub" data-i18n="sbChangeChannelSub">Баттл переключится на новый канал. Собранные треки сохранятся.</div>
+    <input type="text" id="sb-channel-input" class="roast-key-input" placeholder="twitch_channel" autocomplete="off" spellcheck="false" style="width:100%;box-sizing:border-box;font-size:15px;text-align:center;font-weight:700;" onkeydown="if(event.key==='Enter')SongBattle.confirmChannelSwitch()">
+    <div class="rf-confirm-btns">
+      <button onclick="SongBattle.closeChannelSwitch()" class="btn-ghost" style="flex:1;padding:13px;font-size:14px;" data-i18n="cancelBtn">Отмена</button>
+      <button onclick="SongBattle.confirmChannelSwitch()" class="btn-primary" style="flex:1;padding:13px;font-size:14px;" data-i18n="sbChangeChannelBtn">Сменить</button>
+    </div>
+  </div>
+</div>
+
+<!-- исключение зрителя (кик) -->
+<div id="sb-kick-modal" class="rf-confirm-overlay" onclick="if(event.target===this)SongBattle.closeKick()" style="display:none;">
+  <div class="rf-confirm-box liquid-glass" style="max-width:400px;">
+    <div class="rf-confirm-icon" style="color:var(--c-red);"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h7"/><path d="M13 2v20"/><path d="m18 9 3 3-3 3"/><path d="M21 12H10"/></svg></div>
+    <div class="rf-confirm-title" data-i18n="sbKickTitle">Исключить зрителя?</div>
+    <div class="rf-confirm-sub"><b id="sb-kick-name" style="color:var(--c-red);"></b> <span data-i18n="sbKickSub">— его треки будут убраны, и он не сможет участвовать в этом турнире. В следующем — снова сможет.</span></div>
+    <div class="rf-confirm-btns">
+      <button onclick="SongBattle.closeKick()" class="btn-ghost" style="flex:1;padding:13px;font-size:14px;" data-i18n="cancelBtn">Отмена</button>
+      <button onclick="SongBattle.confirmKick()" class="btn-primary" style="flex:1;padding:13px;font-size:14px;background:linear-gradient(135deg,#ff6b91,#ff79df);" data-i18n="sbKickBtn">Исключить</button>
+    </div>
+  </div>
 </div>
 
 <div id="rules-modal" class="modal-overlay hidden" onclick="app.closeRules()">
@@ -1448,18 +1579,20 @@
 <script src="js/confetti.js"></script>
 <script src="js/sound.js"></script>
 <script src="js/storage.js"></script>
-<script src="i18n.js"></script>
+<script src="i18n.js?v=6"></script>
 <script src="js/emotes.js"></script>
 <script src="js/events.js"></script>
 <script src="js/words.js"></script>
 <script src="js/media.js"></script>
 <script src="js/settings.js"></script>
-<script src="js/ui.js"></script>
+<script src="js/ui.js?v=6"></script>
 <script src="js/modes.js"></script>
 <script src="js/lastcall.js"></script>
 <script src="js/roast.js"></script>
 <script src="js/oracle.js"></script>
 <script src="js/raffle.js"></script>
-<script src="js/app.js"></script>
+<script src="https://w.soundcloud.com/player/api.js"></script>
+<script src="js/songbattle.js?v=6"></script>
+<script src="js/app.js?v=6"></script>
 </body>
 </html>

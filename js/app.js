@@ -153,6 +153,7 @@ window.app = {
         this.client.connect().catch(() => {});
         this._bindChatEvents();
         if (window.Raffle) Raffle.onChannelChanged(ch);
+        if (window.SongBattle) SongBattle.onChannelChanged(ch);
         Sound.click();
         return true;
     },
@@ -182,8 +183,11 @@ window.app = {
         } else if (mode === 'roulette') {
             UI.switchScene('roulette');
             if (window.Raffle) Raffle.enterScene();
+        } else if (mode === 'songbattle') {
+            UI.switchScene('songbattle');
+            if (window.SongBattle) SongBattle.enterScene();
         }
-        const hashMap = { chatgoose: 'chatgoose', lastcall: 'lastcall', roast: 'roast', oracle: 'oracle', roulette: 'roulettee' };
+        const hashMap = { chatgoose: 'chatgoose', lastcall: 'lastcall', roast: 'roast', oracle: 'oracle', roulette: 'roulettee', songbattle: 'songsasha' };
         if (hashMap[mode]) { try { history.replaceState(null, '', '#' + hashMap[mode]); } catch (e) {} }
     },
 
@@ -193,6 +197,7 @@ window.app = {
         if (window.Roast) Roast.cleanup();
         if (window.Oracle) Oracle.cleanup();
         if (window.Raffle) Raffle.cleanup();
+        if (window.SongBattle) SongBattle.cleanup();
         try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
         UI.switchScene('mode-select');
     },
@@ -208,6 +213,7 @@ window.app = {
                 return;
             }
             if (window.Raffle) Raffle.onMessage(name, m, tags);
+            if (window.SongBattle) SongBattle.onMessage(name, m, tags);
             if (m.startsWith('!') || m.length < 2) return;
             if (BANNED.some(w => lm.includes(w))) return;
             const url = extractUrl(m);
@@ -735,32 +741,56 @@ window.app = {
     },
 
     _updateHintAvailability(mode) {
-        // ½ hint only works in modes with standard correct/wrong answer buttons
-        const fiftyWorks = !['TWO_OF_FOUR', 'WHOSE_MSG', 'FIRST_WORD', 'GUESS_7TV', 'EMOJI_CHAIN', 'CENSORED', 'CAPSCHECK', 'SPEEDRACE'].includes(mode);
         const btn50 = document.getElementById('hint-50');
-        if (btn50 && !btn50.classList.contains('used')) {
-            btn50.classList.toggle('hint-unavailable', !fiftyWorks);
+        if (!btn50 || btn50.classList.contains('used')) return;
+        let ok = false;
+        if (mode === 'TWO_OF_FOUR') {
+            const wrong = this.twoState
+                ? Array.from(document.querySelectorAll('#answers-grid .answer-btn')).filter(b => b.dataset.text && !this.twoState.correctSet.has(b.dataset.text))
+                : [];
+            ok = wrong.length >= 2;
+        } else {
+            const all = Array.from(document.querySelectorAll('.answer-btn[data-correct]'));
+            const wrong = all.filter(b => b.dataset.correct !== 'true');
+            const correct = all.filter(b => b.dataset.correct === 'true');
+            ok = wrong.length >= 2 && correct.length >= 1;
         }
+        btn50.classList.toggle('hint-unavailable', !ok);
     },
 
     useHint(h) {
         if (h === '5050') {
             const btn = document.getElementById('hint-50');
             if (btn && btn.classList.contains('hint-unavailable')) return;
-        }
-        if (h === '5050' && this.state.hints.fifty) {
-            const all = Array.from(document.querySelectorAll('.answer-btn:not(:disabled)'));
+            if (!this.state.hints.fifty) return;
+            if (this.state.currentMode === 'TWO_OF_FOUR' && this.twoState) {
+                const ts = this.twoState;
+                const wrong = Array.from(document.querySelectorAll('#answers-grid .answer-btn'))
+                    .filter(b => b.dataset.text && !ts.correctSet.has(b.dataset.text) && !b.classList.contains('eliminated'));
+                if (wrong.length < 2) return;
+                this.shuffle(wrong);
+                wrong.slice(1).forEach(b => {
+                    b.classList.add('eliminated'); b.disabled = true;
+                    const pi = ts.picked.indexOf(b.dataset.text); if (pi >= 0) ts.picked.splice(pi, 1);
+                });
+                this.state.hints.fifty = false;
+                document.getElementById('hint-50').classList.add('used');
+                const sub = document.getElementById('two-submit');
+                if (sub) sub.innerText = t('twoSubmit') + ' (' + ts.picked.length + '/2)';
+                this._refreshTwoLock();
+                Sound.click();
+                return;
+            }
+            const all = Array.from(document.querySelectorAll('.answer-btn[data-correct]:not(:disabled)'));
             const wrong = all.filter(b => b.dataset.correct !== 'true');
             const correct = all.filter(b => b.dataset.correct === 'true');
-            // Need at least 1 wrong to hide, and must leave at least correct+1wrong
             if (wrong.length < 2 || correct.length === 0) return;
             this.state.hints.fifty = false;
             document.getElementById('hint-50').classList.add('used');
             this.shuffle(wrong);
-            // Hide all wrong except exactly one
-            const toHide = wrong.slice(1);
-            toHide.forEach(b => { b.classList.add('dimmed'); b.disabled = true; });
+            wrong.slice(1).forEach(b => { b.classList.add('eliminated'); b.disabled = true; });
             Sound.click();
+            return;
         }
         if (h === 'skip' && this.state.hints.skip) {
             this.state.hints.skip = false; document.getElementById('hint-skip').classList.add('used');
@@ -776,13 +806,28 @@ window.app = {
         }
     },
 
+    _refreshTwoLock() {
+        const ts = this.twoState; if (!ts) return;
+        const full = ts.picked.length >= 2;
+        document.querySelectorAll('#answers-grid .answer-btn').forEach(b => {
+            if (!b.dataset.text || b.classList.contains('eliminated')) return;
+            const picked = ts.picked.includes(b.dataset.text);
+            b.classList.toggle('two-locked', full && !picked);
+        });
+    },
+
     toggleTwo(btn, text) {
+        if (btn.classList.contains('eliminated')) return;
         const p = this.twoState.picked;
         const idx = p.indexOf(text);
-        if (idx >= 0) { p.splice(idx, 1); btn.style.borderColor = ''; btn.style.background = ''; }
-        else { if (p.length >= 2) return; p.push(text); btn.style.borderColor = 'var(--c-accent)'; btn.style.background = 'rgba(139,125,255,.13)'; }
+        if (idx >= 0) { p.splice(idx, 1); btn.classList.remove('two-picked'); }
+        else {
+            if (p.length >= 2) { btn.classList.add('two-deny'); setTimeout(() => btn.classList.remove('two-deny'), 320); return; }
+            p.push(text); btn.classList.add('two-picked');
+        }
         Sound.click();
         const sub = document.getElementById('two-submit'); if (sub) sub.innerText = t('twoSubmit') + ' (' + p.length + '/2)';
+        this._refreshTwoLock();
     },
     checkTwo() {
         if (this.twoState.picked.length !== 2) return;
@@ -975,10 +1020,14 @@ window.app = {
     UI.switchScene('login');
 
     if (window.Raffle) Raffle.restore();
-    const hashModes = { chatgoose: 'chatgoose', lastcall: 'lastcall', roast: 'roast', oracle: 'oracle', roulettee: 'roulette', roulette: 'roulette' };
-    const wantMode = hashModes[(location.hash || '').replace('#', '').toLowerCase()] || (window.Raffle && Raffle.isOpen ? 'roulette' : '');
+    if (window.SongBattle) SongBattle.restore();
+    const hashModes = { chatgoose: 'chatgoose', lastcall: 'lastcall', roast: 'roast', oracle: 'oracle', roulettee: 'roulette', roulette: 'roulette', songsasha: 'songbattle', songbattle: 'songbattle' };
+    const sbOpen = window.SongBattle && SongBattle.hasSession && SongBattle.hasSession();
+    const wantMode = hashModes[(location.hash || '').replace('#', '').toLowerCase()] || (window.Raffle && Raffle.isOpen ? 'roulette' : (sbOpen ? 'songbattle' : ''));
     if (wantMode) {
-        const savedCh = (window.Raffle && Raffle.savedChannel()) || Storage.load(Storage.KEYS.settings)?.channel || '';
+        const savedCh = (wantMode === 'songbattle' && window.SongBattle && SongBattle.savedChannel())
+            || (window.Raffle && Raffle.savedChannel())
+            || Storage.load(Storage.KEYS.settings)?.channel || '';
         if (savedCh) {
             const ci0 = document.getElementById('channel-input');
             if (ci0) ci0.value = savedCh;
