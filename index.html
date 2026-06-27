@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 <canvas id="bg-canvas"></canvas>
@@ -1426,12 +1426,13 @@
     <!-- полноэкранный реактивный фон + визуализатор по краям -->
     <div id="sb-fx" class="sb-fx" aria-hidden="true">
       <span class="sb-blob sb-blob-a"></span><span class="sb-blob sb-blob-b"></span><span class="sb-blob sb-blob-c"></span>
-      <canvas id="sb-viz-top" class="sb-viz-edge sb-viz-top"></canvas>
-      <canvas id="sb-viz-bottom" class="sb-viz-edge sb-viz-bottom"></canvas>
     </div>
+    <canvas id="sb-viz-top" class="sb-viz-edge sb-viz-top" aria-hidden="true"></canvas>
+    <canvas id="sb-viz-bottom" class="sb-viz-edge sb-viz-bottom" aria-hidden="true"></canvas>
 
     <div class="liquid-glass sb-topbar">
-      <button class="sb-iconbtn" onclick="app.backToModeSelect()" title="Назад"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-7-7 7-7"/></svg></button>
+      <button class="sb-iconbtn sb-exit-red" onclick="app.backToModeSelect()" title="Выйти к режимам"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/><path d="M10 17l-5-5 5-5"/><path d="M15 12H5"/></svg></button>
+      <button id="sb-back-round" class="sb-iconbtn sb-backround hidden" onclick="SongBattle.goBack()" title="Назад к прошлому раунду"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 0 1 0 8h-1"/></svg></button>
       <div id="sb-tabbar" class="sb-tabbar hidden">
         <button id="sb-tab-game-btn" class="sb-tabbtn on" onclick="SongBattle.setTab('game')" data-i18n="sbTabGame">Игра</button>
         <button id="sb-tab-bracket-btn" class="sb-tabbtn" onclick="SongBattle.setTab('bracket')" data-i18n="sbTabBracket">Сетка</button>
@@ -1579,20 +1580,20 @@
 <script src="js/confetti.js"></script>
 <script src="js/sound.js"></script>
 <script src="js/storage.js"></script>
-<script src="i18n.js?v=6"></script>
+<script src="i18n.js?v=7"></script>
 <script src="js/emotes.js"></script>
 <script src="js/events.js"></script>
 <script src="js/words.js"></script>
 <script src="js/media.js"></script>
 <script src="js/settings.js"></script>
-<script src="js/ui.js?v=6"></script>
+<script src="js/ui.js?v=7"></script>
 <script src="js/modes.js"></script>
 <script src="js/lastcall.js"></script>
 <script src="js/roast.js"></script>
 <script src="js/oracle.js"></script>
 <script src="js/raffle.js"></script>
 <script src="https://w.soundcloud.com/player/api.js"></script>
-<script src="js/songbattle.js?v=6"></script>
-<script src="js/app.js?v=6"></script>
+<script src="js/songbattle.js?v=7"></script>
+<script src="js/app.js?v=7"></script>
 </body>
 </html>

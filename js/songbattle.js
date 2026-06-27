@@ -1,5 +1,13 @@
+/* ============================================================================
+   СонгСаша — музыкальный баттл треков для Twitch-чата.
+   Чат кидает ссылки на треки (YouTube / Spotify / SoundCloud / Apple / Яндекс),
+   система собирает оригинальные (без повторов), строит турнирную сетку,
+   стример включает голосование (1 / 2 в чате) с таймером — или выбирает
+   победителя вручную. Полностью клиентский модуль, переживает F5.
+   ========================================================================== */
 const SongBattle = (function () {
 
+  /* ---------- SVG-иконки (без emoji в функциональном UI) ---------- */
   const ICON = {
     youtube: '<svg viewBox="0 0 24 24" width="100%" height="100%"><path fill="#ff0033" d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8z"/><path fill="#fff" d="M9.6 15.6V8.4l6.2 3.6z"/></svg>',
     spotify: '<svg viewBox="0 0 24 24" width="100%" height="100%"><circle cx="12" cy="12" r="12" fill="#1ed760"/><path fill="#000" d="M17.6 16.8a.75.75 0 0 1-1 .25c-2.8-1.7-6.3-2.1-10.4-1.16a.75.75 0 1 1-.33-1.46c4.5-1.02 8.4-.56 11.5 1.36.35.22.46.69.23 1.01zm1.5-3.3a.94.94 0 0 1-1.3.31c-3.2-2-8.1-2.55-11.9-1.4a.94.94 0 1 1-.54-1.8c4.3-1.3 9.7-.68 13.4 1.6.44.27.58.85.34 1.29zm.13-3.44C15.9 7.8 9.4 7.6 5.7 8.72a1.12 1.12 0 1 1-.65-2.15C9.3 5.3 16.5 5.5 20.7 8a1.12 1.12 0 1 1-1.15 1.93z"/></svg>',
@@ -157,13 +165,13 @@ const SongBattle = (function () {
 
     icon(name) { return ICON[name] || ''; },
     _byId(id) { return this.state.tracks.find(x => x.id === id) || null; },
-    // аватарка зрителя: реальное фото с Twitch (через unavatar), буква — только если фото не загрузилось
     _avatar(tk, extra) {
       const login = (tk.submitter || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
       const img = login ? `<img src="https://unavatar.io/twitch/${encodeURIComponent(login)}?fallback=false" loading="lazy" onerror="this.remove()" alt="">` : '';
       return `<span class="sb-av${extra ? ' ' + extra : ''}" style="background:${tk.color}" title="${esc(tk.submitter)}">${initial(tk.submitter)}${img}</span>`;
     },
 
+    /* ======================= ПЕРСИСТ ======================= */
     _save() {
       clearTimeout(this._saveT);
       this._saveT = setTimeout(() => {
@@ -210,8 +218,7 @@ const SongBattle = (function () {
         this._dedupId.clear(); this._dedupTitle.clear(); this._userCount.clear();
         this.state.tracks.forEach(tk => {
           this._dedupId.set(tk.id, tk.submitter);
-          const nt = normTitle((tk.artist ? tk.artist + ' ' : '') + (tk.title || ''));
-          if (nt) this._dedupTitle.set(nt, tk.submitter + '|' + tk.id);
+          if (tk.title) this._titleKeys(tk).forEach(k => this._dedupTitle.set(k, tk.submitter + '|' + tk.id));
           const u = (tk.submitter || '').toLowerCase();
           this._userCount.set(u, (this._userCount.get(u) || 0) + 1);
         });
@@ -307,6 +314,7 @@ const SongBattle = (function () {
       this._save();
     },
 
+    /* ======================= ЛОББИ-ОБОЛОЧКА ======================= */
     _renderJoinHint() {
       const w = document.getElementById('sb-join-word'); if (w) w.textContent = '!' + this.config.command;
       const ex = document.getElementById('sb-join-example');
@@ -410,6 +418,7 @@ const SongBattle = (function () {
       }
     },
 
+    /* ======================= ОБРАБОТКА ЧАТА ======================= */
     onMessage(name, text, tags) {
       if (!this.isActive) return;
       const raw = (text || '').trim();
@@ -585,7 +594,19 @@ const SongBattle = (function () {
               else if (res.artworkUrl60) track.cover = res.artworkUrl60.replace(/\/\d+x\d+bb?\./, '/300x300bb.');
             }
           }
-        } else if (track.source === 'yandex') {
+        } else if (track.source === 'yandex' && track.yaTrack) {
+          try {
+            const r = await fetch('https://api.music.yandex.net/tracks/' + encodeURIComponent(track.yaTrack));
+            if (r.ok) {
+              const j = await r.json();
+              const res = j && j.result && j.result[0];
+              if (res) {
+                if (res.title) track.title = res.title + (res.version ? ' (' + res.version + ')' : '');
+                if (res.artists && res.artists.length) track.artist = track.artist || res.artists.map(a => a.name).join(', ');
+                if (res.coverUri) track.cover = 'https://' + res.coverUri.replace('%%', '300x300');
+              }
+            }
+          } catch (e) {}
         }
       } catch (e) {}
       const titleResolved = !!track.title;
@@ -593,19 +614,30 @@ const SongBattle = (function () {
       track._resolved = true;
       this._extractTint(track);
       if (titleResolved) {
-        const nt = normTitle((track.artist ? track.artist + ' ' : '') + (track.title || ''));
-        if (nt) {
-          if (this._dedupTitle.has(nt) && this._dedupTitle.get(nt) !== track.submitter + '|' + track.id) {
+        const keys = this._titleKeys(track);
+        const owner = track.submitter + '|' + track.id;
+        for (let i = 0; i < keys.length; i++) {
+          const o = this._dedupTitle.get(keys[i]);
+          if (o && o !== owner) {
             this._removeTrack(track.id, true);
-            this._dupToast(track.submitter, this._dedupTitle.get(nt).split('|')[0]);
+            this._dupToast(track.submitter, o.split('|')[0]);
             this._save(); this.queueRender();
             return;
           }
-          this._dedupTitle.set(nt, track.submitter + '|' + track.id);
         }
+        keys.forEach(k => this._dedupTitle.set(k, owner));
       }
       this.queueRender();
       this._save();
+    },
+    _titleKeys(track) {
+      const keys = [], seen = {};
+      const t = normTitle(track.title || '');
+      const a = normTitle(track.artist || '');
+      const add = (k) => { if (k && k.length >= 5 && !seen[k]) { seen[k] = 1; keys.push(k); } };
+      add(t);
+      if (a && t) { add(a + t); add(t + a); }
+      return keys;
     },
 
     _extractTint(track) {
@@ -641,8 +673,8 @@ const SongBattle = (function () {
       const tk = this.state.tracks[i];
       this.state.tracks.splice(i, 1);
       this._dedupId.delete(id);
-      const nt = normTitle((tk.artist ? tk.artist + ' ' : '') + (tk.title || ''));
-      if (nt && this._dedupTitle.get(nt) === tk.submitter + '|' + id) this._dedupTitle.delete(nt);
+      const owner = tk.submitter + '|' + id;
+      this._titleKeys(tk).forEach(k => { if (this._dedupTitle.get(k) === owner) this._dedupTitle.delete(k); });
       const uname = (tk.submitter || '').toLowerCase();
       if (!this._banned.has(uname)) this._userCount.set(uname, Math.max(0, (this._userCount.get(uname) || 1) - 1));
       this.queueRender(); this._save();
@@ -677,6 +709,12 @@ const SongBattle = (function () {
       if (inLobby) this._tab = 'game';
       else this.setTabSilent(this._tab || 'game');
       if (!inLobby) this.mountBattle();
+      this._reflectBack();
+    },
+    _reflectBack() {
+      const btn = document.getElementById('sb-back-round'); if (!btn) return;
+      const show = this.state.phase !== 'lobby' && this.canGoBack();
+      btn.classList.toggle('hidden', !show);
     },
     setTabSilent(t) {
       this._tab = t;
@@ -734,6 +772,28 @@ const SongBattle = (function () {
       </div>`;
     },
 
+    _spreadSubmitters(pool) {
+      const groups = {};
+      pool.forEach(t => { const u = (t.submitter || '').toLowerCase(); (groups[u] = groups[u] || []).push(t); });
+      const lists = Object.keys(groups).map(k => groups[k]).sort((a, b) => b.length - a.length);
+      const out = [];
+      let any = true;
+      while (any) {
+        any = false;
+        for (let i = 0; i < lists.length; i++) { if (lists[i].length) { out.push(lists[i].shift()); any = true; } }
+      }
+      for (let k = 0; k * 2 + 1 < out.length; k++) {
+        const i = k * 2, j = k * 2 + 1;
+        if ((out[i].submitter || '').toLowerCase() === (out[j].submitter || '').toLowerCase()) {
+          for (let m = j + 1; m < out.length; m++) {
+            if ((out[m].submitter || '').toLowerCase() !== (out[i].submitter || '').toLowerCase()) { const t = out[j]; out[j] = out[m]; out[m] = t; break; }
+          }
+        }
+      }
+      return out;
+    },
+
+    /* ======================= СТАРТ ======================= */
     startBattle() {
       let pool = this.state.tracks.slice();
       if (pool.length < 2) return;
@@ -767,6 +827,8 @@ const SongBattle = (function () {
         return;
       }
 
+      pool = this._spreadSubmitters(pool);
+      this.state.seeds = pool.map(t => t.id);
       const rounds = [];
       let slots = size;
       while (slots >= 2) { rounds.push({ battles: Array.from({ length: slots / 2 }, () => ({ a: null, b: null, winner: null, votes: { a: 0, b: 0 }, voters: new Map(), locked: false })) }); slots /= 2; }
@@ -900,6 +962,7 @@ const SongBattle = (function () {
       this._renderVoteBars();
       this._renderVoteControls();
       this._resolveMountedMeta();
+      this._reflectBack();
     },
 
     _resolveMountedMeta() {
@@ -948,6 +1011,7 @@ const SongBattle = (function () {
       wrap.innerHTML = `<div class="sb-chart-card">${this._trackCardHTML(tk, 'a', false, true)}</div>`;
       this._resolveMountedMeta();
       this._renderChartControls();
+      this._reflectBack();
     },
     _renderChartControls() {
       const bar = document.getElementById('sb-vote-controls'); if (!bar) return;
@@ -1017,6 +1081,7 @@ const SongBattle = (function () {
         </div>`;
       try { if (window.confetti) confetti({ particleCount: 160, spread: 90 }); } catch (e) {}
       Sound.final && Sound.final();
+      this._reflectBack();
     },
 
     /* ======================= ГОЛОСОВАНИЕ (совещательное) ======================= */
@@ -1175,6 +1240,51 @@ const SongBattle = (function () {
     },
 
     nextBattle() { this.chooseWinner('a'); },
+
+    canGoBack() {
+      if (this.config.mode === 'tournament') return this.state.phase === 'done' || this.state.ri > 0 || this.state.bi > 0;
+      if (this.config.mode === 'chart') return !!(this.state.chart && (this.state.phase === 'done' || this.state.chart.i > 0));
+      return false;
+    },
+    goBack() {
+      if (this.config.mode === 'chart') {
+        const c = this.state.chart; if (!c) return;
+        if (this.state.phase === 'done') { this.state.phase = 'battle'; this.state.champion = null; }
+        else if (c.i > 0) c.i--;
+        else return;
+        this.state.voting = false; this._stopVoteTimer(); this._unmountEmbeds();
+        this._save(); this.setTabSilent('game'); this._renderBattleHeader(); this._renderChart(); this._renderBelow();
+        Sound.click && Sound.click();
+        return;
+      }
+      if (this.config.mode !== 'tournament') return;
+      let ri = this.state.ri, bi = this.state.bi;
+      if (this.state.phase === 'done') {
+        this.state.champion = null; this.state.phase = 'battle';
+        ri = this.state.rounds.length - 1; bi = 0;
+      } else {
+        if (bi > 0) bi--;
+        else if (ri > 0) { ri--; bi = this.state.rounds[ri].battles.length - 1; }
+        else return;
+      }
+      const b = this.state.rounds[ri] && this.state.rounds[ri].battles[bi];
+      if (b && b.winner) {
+        const wt = this._byId(b.winner), lt = this._byId(b.winner === b.a ? b.b : b.a);
+        if (wt) { wt.wins = Math.max(0, (wt.wins || 0) - 1); wt.battles = Math.max(0, (wt.battles || 0) - 1); }
+        if (lt) { lt.battles = Math.max(0, (lt.battles || 0) - 1); }
+        if (ri < this.state.rounds.length - 1) {
+          const nb = this.state.rounds[ri + 1].battles[Math.floor(bi / 2)];
+          if (nb) { if (bi % 2 === 0) nb.a = null; else nb.b = null; nb.winner = null; nb.locked = false; nb.votes = { a: 0, b: 0 }; nb.voters = new Map(); }
+        }
+        b.winner = null; b.locked = false; b.votes = { a: 0, b: 0 }; b.voters = new Map(); b._advancing = false;
+      }
+      this.state.ri = ri; this.state.bi = bi; this.state.voting = false; this._stopVoteTimer();
+      this._unmountEmbeds();
+      this._save();
+      this.setTabSilent('game');
+      this._renderBattleHeader(); this._renderBattleCards(); this._renderBelow();
+      Sound.click && Sound.click();
+    },
     _animateSwap(fn) {
       const wrap = document.getElementById('sb-cards'); if (!wrap) { fn(); return; }
       wrap.classList.add('sb-swap-out');
@@ -1223,6 +1333,7 @@ const SongBattle = (function () {
       Sound.click();
     },
 
+    /* ======================= НИЖНИЙ БЛОК: ВСЕ ТРЕКИ + СЕТКА ======================= */
     _renderBelow() {
       this._renderAllSongs();
       this.renderBracket();
@@ -1281,7 +1392,7 @@ const SongBattle = (function () {
         const q = (this.state.queue || []).map((id, i) => {
           const tk = this._byId(id); if (!tk) return '';
           const sm = SOURCE_META[tk.source] || SOURCE_META.text;
-          const revealed = i === 0;
+          const revealed = i === 0; // следующий — на экране, остальные под секретом
           return `<div class="sb-qrow${i === 0 ? ' sb-qnext' : ''}${revealed ? '' : ' sb-secret'}" style="--tint:${tk.tint || sm.color}">
               <span class="sb-qnum">${i === 0 ? tr('sbNextUp', 'next') : i + 1}</span>
               ${tk.cover ? `<img class="sb-qcov sb-blurfade" src="${esc(tk.cover)}" onerror="this.style.display='none'">` : `<span class="sb-qcov sb-cover-ph">${this.icon(tk.source)}</span>`}
@@ -1344,7 +1455,21 @@ const SongBattle = (function () {
       Sound.click && Sound.click();
     },
 
-    _vizKick() { this._vizK = 1; },
+    /* ======================= АУДИО-ВИЗУАЛИЗАТОР (по краям экрана) ======================= */
+    _vizKick() { this._vizK = 1; this._playUntil = Date.now() + 30000; },
+    _onPlayerClick(playerEl) {
+      this._vizKick();
+      const cards = document.getElementById('sb-cards'); if (!cards) return;
+      const players = Array.prototype.slice.call(cards.querySelectorAll('.sb-tc-player'));
+      if (players.length < 2) return;
+      if (this._lastPlayerEl === playerEl) return;
+      this._lastPlayerEl = playerEl;
+      players.forEach(p => {
+        if (p === playerEl) return;
+        const f = p.querySelector('iframe.sb-embed');
+        if (f) { const s = f.src; f.src = 'about:blank'; setTimeout(() => { try { f.src = s; } catch (e) {} }, 30); }
+      });
+    },
     _startViz() {
       if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       const tops = [document.getElementById('sb-viz-top'), document.getElementById('sb-viz-bottom')].filter(Boolean);
@@ -1353,7 +1478,8 @@ const SongBattle = (function () {
       if (!this._vizClickBound) {
         this._vizClickBound = true;
         document.addEventListener('click', (e) => {
-          if (e.target && e.target.closest && e.target.closest('.sb-tc-player')) this._vizKick();
+          const p = e.target && e.target.closest && e.target.closest('.sb-tc-player');
+          if (p) this._onPlayerClick(p);
         }, true);
       }
       const bars = 110;
@@ -1366,10 +1492,13 @@ const SongBattle = (function () {
         if (!this.isActive || document.hidden) return;
         if (ts - last < 24) return;
         last = ts;
-        const playing = this.state.phase === 'battle';
+        const mounted = (this.state.phase === 'battle');
+        const recent = this._playUntil && Date.now() < this._playUntil;
+        const playing = mounted && recent;
         const beat = 0.5 + 0.5 * Math.pow(Math.max(0, Math.sin(ts / 1000 * Math.PI * 2 * 1.85)), 5);
-        this._vizK *= 0.92; 
-        const target = playing ? (0.62 * beat + 0.38) * (1 + this._vizK * 0.8) : this._vizK * 0.5;
+        this._vizK *= 0.92;
+        const base = playing ? (0.62 * beat + 0.38) : (mounted ? 0.14 : 0.0);
+        const target = base * (1 + this._vizK * 0.8) + this._vizK * (mounted && !playing ? 0.4 : 0);
         this._vizAmp += (target - this._vizAmp) * 0.18;
         const t = ts / 1000;
         tops.forEach((cv, idx) => {
@@ -1379,7 +1508,7 @@ const SongBattle = (function () {
           if (cv.height !== h) cv.height = h;
           ctx.clearRect(0, 0, w, h);
           const bw = w / bars;
-          const growDown = idx === 0; 
+          const growDown = idx === 0; // верх — вниз, низ — вверх
           for (let i = 0; i < bars; i++) {
             const cdist = 1 - Math.abs(i - bars / 2) / (bars / 2);
             const n = (Math.sin(t * 1.6 * spd[i] + phase[i]) * 0.5 + 0.5) * 0.55

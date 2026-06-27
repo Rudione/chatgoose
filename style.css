@@ -1372,7 +1372,8 @@ img.sb-cover-fail{background:linear-gradient(135deg,var(--tint,#2a2750),#14132e)
 /* полноэкранный реактивный слой (фон + визуализатор по краям) */
 .sb-fx{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
 #scene-songbattle{z-index:1;}
-#scene-songbattle > *:not(.sb-fx){position:relative;z-index:1;}
+#scene-songbattle > *:not(.sb-fx):not(.sb-viz-edge){position:relative;z-index:1;}
+.sb-viz-edge{position:fixed;left:0;width:100vw;height:84px;z-index:7;pointer-events:none;opacity:.6;}
 .sb-fx .sb-blob{position:absolute;border-radius:50%;filter:blur(110px);opacity:0;transition:opacity .8s ease;will-change:transform,opacity;}
 .sb-fx .sb-blob-a{width:48vw;height:48vw;left:-12vw;top:-10vh;background:var(--tintA,#8b7dff);}
 .sb-fx .sb-blob-b{width:46vw;height:46vw;right:-12vw;bottom:-12vh;background:var(--tintB,#ff79df);}
@@ -1518,3 +1519,13 @@ img.sb-cover-fail{background:linear-gradient(135deg,var(--tint,#2a2750),#14132e)
 .sb-lc-secret:hover .sb-lc-artist{filter:blur(0);transition-delay:.7s;}
 .sb-lc-secret{position:relative;}
 .sb-lc-secret .sb-lc-cover{position:relative;}
+
+.sb-viz-edge{position:fixed!important;left:0;width:100vw;height:82px;z-index:7;pointer-events:none;opacity:.58;}
+.sb-viz-top{top:0;bottom:auto;}
+.sb-viz-bottom{bottom:0;top:auto;}
+
+.sb-exit-red{color:var(--c-red)!important;border-color:rgba(255,107,145,0.4)!important;background:rgba(255,107,145,0.1)!important;}
+.sb-exit-red:hover{background:rgba(255,107,145,0.2)!important;border-color:var(--c-red)!important;}
+.sb-backround{color:var(--c-blue);}
+.sb-backround:hover{background:rgba(101,208,255,0.14);border-color:rgba(101,208,255,0.4);}
+.sb-backround.hidden{display:none;}

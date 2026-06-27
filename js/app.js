@@ -745,11 +745,13 @@ window.app = {
         if (!btn50 || btn50.classList.contains('used')) return;
         let ok = false;
         if (mode === 'TWO_OF_FOUR') {
+            // ½ убирает один неверный из четырёх — нужно минимум 2 неверных варианта
             const wrong = this.twoState
                 ? Array.from(document.querySelectorAll('#answers-grid .answer-btn')).filter(b => b.dataset.text && !this.twoState.correctSet.has(b.dataset.text))
                 : [];
             ok = wrong.length >= 2;
         } else {
+            // доступно везде, где есть стандартные кнопки: ≥1 правильная и ≥2 неправильных
             const all = Array.from(document.querySelectorAll('.answer-btn[data-correct]'));
             const wrong = all.filter(b => b.dataset.correct !== 'true');
             const correct = all.filter(b => b.dataset.correct === 'true');
@@ -763,6 +765,7 @@ window.app = {
             const btn = document.getElementById('hint-50');
             if (btn && btn.classList.contains('hint-unavailable')) return;
             if (!this.state.hints.fifty) return;
+            // режим «2 из 4» — убираем один неверный вариант
             if (this.state.currentMode === 'TWO_OF_FOUR' && this.twoState) {
                 const ts = this.twoState;
                 const wrong = Array.from(document.querySelectorAll('#answers-grid .answer-btn'))
@@ -781,6 +784,7 @@ window.app = {
                 Sound.click();
                 return;
             }
+            // стандартные режимы — оставляем 1 правильный и 1 неправильный
             const all = Array.from(document.querySelectorAll('.answer-btn[data-correct]:not(:disabled)'));
             const wrong = all.filter(b => b.dataset.correct !== 'true');
             const correct = all.filter(b => b.dataset.correct === 'true');
@@ -806,6 +810,7 @@ window.app = {
         }
     },
 
+    // блокируем невыбранные варианты, когда уже выбрано 2 (визуально явно)
     _refreshTwoLock() {
         const ts = this.twoState; if (!ts) return;
         const full = ts.picked.length >= 2;
