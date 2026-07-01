@@ -1,5 +1,47 @@
 const BANNED = ['nword','negr','pidor','p1dor','kill yourself','kys','даун','ниггер','пидор','шлюха','хохол','москаль'];
 
+const MODE_MENU = [
+    {
+        id: 'songbattle', featured: true, cardCls: 'ms-card-songsasha ms-hero-new', bgCls: 'ms-card-bg-6',
+        icon: '<div class="ms-card-icon ms-ss-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="url(#ssg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="ssg" x1="0" y1="0" x2="24" y2="24"><stop offset="0" stop-color="#8b7dff"/><stop offset="1" stop-color="#ff79df"/></linearGradient></defs><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>',
+        title: 'СОНГСАША', badge: { key: 'msTagNew', cls: 'ms-tag-new' },
+        subKey: 'msSsSub', subStyle: 'color:var(--c-accent2);', descKey: 'msSsDesc',
+        tags: [{ key: 'msSsTag' }, { key: 'msSsTagTour', cls: 'ms-tag-hot' }],
+        ctaStyle: 'background:linear-gradient(135deg,rgba(139,125,255,0.2),rgba(255,121,223,0.14));border-color:rgba(255,121,223,0.45);'
+    },
+    {
+        id: 'roulette', featured: true, cardCls: 'ms-card-roulette ms-hero-new', bgCls: 'ms-card-bg-5',
+        icon: '<div class="ms-card-icon">🎰</div>', title: 'ROULETTEE',
+        subKey: 'msRouletteSub', subStyle: 'color:var(--c-gold);', descKey: 'msRouletteDesc',
+        tags: [{ key: 'msTagRaffle' }, { key: 'msTagCsStyle', cls: 'ms-tag-hot' }],
+        ctaStyle: 'background:linear-gradient(135deg,rgba(255,212,112,0.2),rgba(255,121,223,0.12));border-color:rgba(255,212,112,0.45);'
+    },
+    {
+        id: 'chatgoose', featured: true, cardCls: 'ms-card-chatgoose', bgCls: 'ms-card-bg-1',
+        icon: '<div class="ms-card-icon">🪿</div>', title: 'CHATGOOSE', badge: { key: 'msTagMain', cls: 'ms-tag-hot' },
+        subKey: 'msChatgooseSub', descKey: 'msChatgooseDesc',
+        tags: [{ key: 'msTagQuiz' }, { key: 'msTagMulti' }]
+    },
+    {
+        id: 'lastcall', cardCls: 'ms-card-lastcall', bgCls: 'ms-card-bg-2',
+        icon: '<div class="ms-card-icon">⏳</div>', title: 'LAST CALL',
+        subKey: 'msLastcallSub', descKey: 'msLastcallDesc',
+        tags: [{ key: 'msTagDrop' }, { key: 'msTagResetMode', cls: 'ms-tag-hot' }]
+    },
+    {
+        id: 'roast', cardCls: 'ms-card-roast', bgCls: 'ms-card-bg-3',
+        icon: '<div class="ms-card-icon">🔮</div>', title: 'CHAT ROAST',
+        subKey: 'msRoastSub', descKey: 'msRoastDesc',
+        tags: [{ key: 'msTagAi' }, { key: 'msTagHumor' }]
+    },
+    {
+        id: 'oracle', cardCls: 'ms-card-oracle', bgCls: 'ms-card-bg-4',
+        icon: '<div class="ms-card-icon">📊</div>', title: 'ORACLE',
+        subKey: 'msOracleSub', descKey: 'msOracleDesc',
+        tags: [{ key: 'msTagPrediction' }, { key: 'msTagNew', cls: 'ms-tag-new' }]
+    }
+];
+
 window.app = {
     client: null,
     users: new Map(),
@@ -20,6 +62,11 @@ window.app = {
     finalData: null,
     _pendingTimers: [],
     _finalChecked: false,
+
+    connStatus: 'idle',
+    connLog: [],
+    _connListeners: [],
+    _connLogMax: 60,
 
     config: {
         needed: 20, rounds: 20, timerPer: 0, timerTotal: 0,
@@ -130,6 +177,7 @@ window.app = {
 
         if (window.Roast) Roast.beginCollecting();
         this.client = new tmi.Client({ channels: [ch] });
+        this._bindConnStatus();
         this.client.connect().catch(e => { alert(t('errConnecting') + e); UI.switchScene('login'); });
         this._bindChatEvents();
         if (this._pendingMode) {
@@ -150,6 +198,7 @@ window.app = {
         Emotes.map = new Map(); Emotes.set7tv = new Map(); Emotes.pfpMap = new Map();
         Emotes.load(ch);
         this.client = new tmi.Client({ channels: [ch] });
+        this._bindConnStatus();
         this.client.connect().catch(() => {});
         this._bindChatEvents();
         if (window.Raffle) Raffle.onChannelChanged(ch);
@@ -159,7 +208,43 @@ window.app = {
     },
 
     ensureConnected() {
-        try { if (this.client && this.client.forceCheck) this.client.forceCheck(); } catch (e) {}
+        try { if (this.client && this.client.wake) this.client.wake(); else if (this.client && this.client.forceCheck) this.client.forceCheck(); } catch (e) {}
+    },
+
+    onConn(fn) {
+        if (typeof fn === 'function' && this._connListeners.indexOf(fn) === -1) this._connListeners.push(fn);
+        return () => { this._connListeners = this._connListeners.filter(x => x !== fn); };
+    },
+
+    _emitConn() {
+        this._connListeners.forEach(fn => { try { fn(this.connStatus, this.connLog); } catch (e) {} });
+    },
+
+    _pushConnLog(type, text) {
+        this.connLog.push({ at: Date.now(), type, text });
+        if (this.connLog.length > this._connLogMax) this.connLog = this.connLog.slice(-this._connLogMax);
+    },
+
+    _bindConnStatus() {
+        if (!this.client || this.client.__connBound) return;
+        this.client.__connBound = true;
+        const ch = this._connectedChannel || '';
+        const set = (status, type, text) => {
+            this.connStatus = status;
+            if (type) this._pushConnLog(type, text);
+            this._emitConn();
+        };
+        this.client.on('status', (s) => {
+            const map = { connected: 'connected', connecting: 'connecting', idle: 'idle' };
+            this.connStatus = map[s] || s;
+            this._emitConn();
+        });
+        this.client.on('connected', () => set('connected', 'ok', (t('connLogConnected') || 'Подключено к чату') + (ch ? ' #' + ch : '')));
+        this.client.on('disconnected', () => set('connecting', 'warn', t('connLogLost') || 'Соединение потеряно — переподключаемся'));
+        this.client.on('reconnecting', (n) => set('connecting', 'info', (t('connLogReconnecting') || 'Переподключение') + (n ? ' #' + n : '…')));
+        this.connStatus = this.client.status ? (this.client.status() === 'connected' ? 'connected' : 'connecting') : 'connecting';
+        this._pushConnLog('info', (t('connLogConnecting') || 'Подключение к чату') + (ch ? ' #' + ch : ''));
+        this._emitConn();
     },
 
     selectMode(mode) {
@@ -200,6 +285,39 @@ window.app = {
         if (window.SongBattle) SongBattle.cleanup();
         try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
         UI.switchScene('mode-select');
+    },
+
+    renderModeMenu() {
+        const host = document.getElementById('mode-cards');
+        if (!host || host.dataset.built === '1') return;
+        const cta = m => `<div class="ms-card-cta"${m.ctaStyle ? ` style="${m.ctaStyle}"` : ''}>
+            <span data-i18n="msPlayBtn">Играть</span>
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+        </div>`;
+        const tags = m => `<div class="ms-card-tags">${(m.tags || []).map(tg => `<span class="ms-tag${tg.cls ? ' ' + tg.cls : ''}" data-i18n="${tg.key}"></span>`).join('')}</div>`;
+        const titleRow = m => m.badge
+            ? `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;"><div class="ms-card-title font-display">${m.title}</div><span class="ms-tag ${m.badge.cls}" data-i18n="${m.badge.key}"></span></div>`
+            : `<div class="ms-card-title font-display">${m.title}</div>`;
+        const card = m => `<div class="ms-card ${m.cardCls}" onclick="app.selectMode('${m.id}')">
+            <div class="ms-card-bg ${m.bgCls}"></div>
+            ${m.icon}
+            ${titleRow(m)}
+            <div class="ms-card-subtitle"${m.subStyle ? ` style="${m.subStyle}"` : ''} data-i18n="${m.subKey}"></div>
+            <div class="ms-card-desc" data-i18n="${m.descKey}"></div>
+            ${tags(m)}
+            ${cta(m)}
+        </div>`;
+        const featured = MODE_MENU.filter(m => m.featured);
+        const extra = MODE_MENU.filter(m => !m.featured);
+        host.innerHTML = `
+            <div class="ms-featured-grid">${featured.map(card).join('')}</div>
+            ${extra.length ? `<div class="ms-section-divider">
+                <div class="ms-section-label" data-i18n="msExtraModes">Дополнительные режимы</div>
+                <div class="ms-section-rule"></div>
+            </div>
+            <div class="ms-small-grid">${extra.map(card).join('')}</div>` : ''}`;
+        host.dataset.built = '1';
+        applyLang();
     },
 
     _bindChatEvents() {
@@ -1022,6 +1140,7 @@ window.app = {
 (function initApp() {
     Settings.load();
     applyLang();
+    if (window.app && app.renderModeMenu) app.renderModeMenu();
     UI.switchScene('login');
 
     if (window.Raffle) Raffle.restore();

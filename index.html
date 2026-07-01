@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=10">
 </head>
 <body>
 <canvas id="bg-canvas"></canvas>
@@ -236,125 +236,7 @@
       </div>
     </div>
 
-    <div id="mode-cards" style="display:flex;flex-direction:column;gap:14px;">
-      <div class="ms-top-duo">
-        <div class="ms-card ms-card-songsasha ms-hero-new" onclick="app.selectMode('songbattle')">
-          <div class="ms-card-bg ms-card-bg-6"></div>
-          <div class="ms-card-icon ms-ss-icon">
-            <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="url(#ssg)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><defs><linearGradient id="ssg" x1="0" y1="0" x2="24" y2="24"><stop offset="0" stop-color="#8b7dff"/><stop offset="1" stop-color="#ff79df"/></linearGradient></defs><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <div class="ms-card-title font-display">СОНГСАША</div>
-            <span class="ms-tag ms-tag-new" data-i18n="msTagNew">NEW</span>
-          </div>
-          <div class="ms-card-subtitle" style="color:var(--c-accent2);" data-i18n="msSsSub">Музыкальный турнир чата</div>
-          <div class="ms-card-desc" data-i18n="msSsDesc">Зрители кидают ссылки на треки (YouTube, Spotify, SoundCloud, Apple, Яндекс) — без повторов. Случайная сетка, встроенные плееры, голосование 1/2 в чате с таймером.</div>
-          <div class="ms-card-tags">
-            <span class="ms-tag" data-i18n="msSsTag">баттл треков</span>
-            <span class="ms-tag ms-tag-hot" data-i18n="msSsTagTour">турнир</span>
-          </div>
-          <div class="ms-card-cta" style="background:linear-gradient(135deg,rgba(139,125,255,0.2),rgba(255,121,223,0.14));border-color:rgba(255,121,223,0.45);">
-            <span data-i18n="msPlayBtn">Играть</span>
-            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-          </div>
-        </div>
-
-        <div class="ms-card ms-card-roulette ms-hero-new" onclick="app.selectMode('roulette')">
-          <div class="ms-card-bg ms-card-bg-5"></div>
-          <div class="ms-card-icon">🎰</div>
-          <div class="ms-card-title font-display">ROULETTEE</div>
-          <div class="ms-card-subtitle" style="color:var(--c-gold);" data-i18n="msRouletteSub">Рафл-рулетка для розыгрышей</div>
-          <div class="ms-card-desc" data-i18n="msRouletteDesc">Чат заходит по кодовому слову, стример крутит CS-рулетку с анимацией и звуком. Билеты, бонусы ролям, проверка фоллова, история побед. Не сбивается даже после F5.</div>
-          <div class="ms-card-tags">
-            <span class="ms-tag" data-i18n="msTagRaffle">розыгрыш</span>
-            <span class="ms-tag ms-tag-hot" data-i18n="msTagCsStyle">CS-рулетка</span>
-          </div>
-          <div class="ms-card-cta" style="background:linear-gradient(135deg,rgba(255,212,112,0.2),rgba(255,121,223,0.12));border-color:rgba(255,212,112,0.45);">
-            <span data-i18n="msPlayBtn">Играть</span>
-            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-          </div>
-        </div>
-
-        <div class="ms-card ms-card-chatgoose" onclick="app.selectMode('chatgoose')">
-          <div class="ms-card-bg ms-card-bg-1"></div>
-          <div class="ms-card-icon">🪿</div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-            <div class="ms-card-title font-display">CHATGOOSE</div>
-            <span class="ms-tag ms-tag-hot" data-i18n="msTagMain">главная игра</span>
-          </div>
-          <div class="ms-card-subtitle" data-i18n="msChatgooseSub">Классический квиз</div>
-          <div class="ms-card-desc" data-i18n="msChatgooseDesc">14 режимов: угадай автора, пропущенное слово, два из четырёх, эмоджи-цепочка и др. Финальный раунд с перетаскиванием.</div>
-          <div class="ms-card-tags">
-            <span class="ms-tag" data-i18n="msTagQuiz">квиз</span>
-            <span class="ms-tag" data-i18n="msTagMulti">14 режимов</span>
-          </div>
-          <div class="ms-card-cta">
-            <span data-i18n="msPlayBtn">Играть</span>
-            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-          </div>
-        </div>
-      </div>
-
-      
-      <div style="display:flex;align-items:center;gap:10px;margin-top:4px;">
-        <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.12em;" data-i18n="msExtraModes">Дополнительные режимы</div>
-        <div style="flex:1;height:1px;background:rgba(255,255,255,0.08);"></div>
-      </div>
-
-      
-      <div class="ms-small-grid">
-        
-        <div class="ms-card ms-card-lastcall" onclick="app.selectMode('lastcall')">
-          <div class="ms-card-bg ms-card-bg-2"></div>
-          <div class="ms-card-icon">⏳</div>
-          <div class="ms-card-title font-display">LAST CALL</div>
-          <div class="ms-card-subtitle" data-i18n="msLastcallSub">Последний написавший</div>
-          <div class="ms-card-desc" data-i18n="msLastcallDesc">Таймер: кто написал последним — победил. Для дропа призов. Есть режим со сбросом таймера.</div>
-          <div class="ms-card-tags">
-            <span class="ms-tag" data-i18n="msTagDrop">розыгрыш</span>
-            <span class="ms-tag ms-tag-hot" data-i18n="msTagResetMode">+ reset-mode</span>
-          </div>
-          <div class="ms-card-cta">
-            <span data-i18n="msPlayBtn">Играть</span>
-            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-          </div>
-        </div>
-
-        
-        <div class="ms-card ms-card-roast" onclick="app.selectMode('roast')">
-          <div class="ms-card-bg ms-card-bg-3"></div>
-          <div class="ms-card-icon">🔮</div>
-          <div class="ms-card-title font-display">CHAT ROAST</div>
-          <div class="ms-card-subtitle" data-i18n="msRoastSub">AI-психоанализ чата</div>
-          <div class="ms-card-desc" data-i18n="msRoastDesc">ИИ читает чат за стрим и выдаёт характеристики: кто красавчик, кто загадка дня. Угадай по цитате.</div>
-          <div class="ms-card-tags">
-            <span class="ms-tag" data-i18n="msTagAi">5 AI · local</span>
-            <span class="ms-tag" data-i18n="msTagHumor">юмор</span>
-          </div>
-          <div class="ms-card-cta">
-            <span data-i18n="msPlayBtn">Играть</span>
-            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-          </div>
-        </div>
-
-        
-        <div class="ms-card ms-card-oracle" onclick="app.selectMode('oracle')">
-          <div class="ms-card-bg ms-card-bg-4"></div>
-          <div class="ms-card-icon">📊</div>
-          <div class="ms-card-title font-display">ORACLE</div>
-          <div class="ms-card-subtitle" data-i18n="msOracleSub">Угадай число / слово</div>
-          <div class="ms-card-desc" data-i18n="msOracleDesc">Задаёшь вопрос — чат пишет ответы, побеждает ближайший. График распределения и лидерборд.</div>
-          <div class="ms-card-tags">
-            <span class="ms-tag" data-i18n="msTagPrediction">предсказание</span>
-            <span class="ms-tag ms-tag-new" data-i18n="msTagNew">NEW</span>
-          </div>
-          <div class="ms-card-cta">
-            <span data-i18n="msPlayBtn">Играть</span>
-            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div id="mode-cards" class="ms-cards-host" style="display:flex;flex-direction:column;gap:16px;"></div>
 
   </div>
 
@@ -1256,6 +1138,13 @@
         <button onclick="Raffle.toggleSettings()" class="rf-iconbtn" title="⚙️" style="font-size:15px;">⚙️</button>
         <button id="rf-btn-sound" onclick="Raffle.toggleSoundBtn()" class="rf-iconbtn" style="font-size:15px;" title="Звук вкл/выкл">🔊</button>
       </div>
+      <div class="liquid-glass rf-conn-group" style="flex-shrink:0;">
+        <span class="rf-conn"><span id="rf-conn-dot" class="rf-conn-dot off"></span><span id="rf-conn-label" class="rf-conn-label" data-i18n="rfConnOff">Нет связи</span></span>
+        <button onclick="Raffle.toggleConnLog()" class="rf-iconbtn rf-conn-logbtn" title="Лог подключения">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h8"/><path d="M8 9h2"/></svg>
+          <span data-i18n="rfLogBtn">Лог</span>
+        </button>
+      </div>
       <div class="liquid-glass" style="flex:1;min-width:220px;">
         <input type="text" id="rf-title" placeholder="Название розыгрыша…" data-i18n-ph="rfTitlePh" oninput="Raffle.setTitle(this.value)" class="rf-title-input" style="background:none;border:none;padding:4px 2px;">
       </div>
@@ -1271,13 +1160,13 @@
     </div>
 
     <div class="rf-grid">
-      <div class="liquid-glass" style="padding:16px;display:flex;flex-direction:column;gap:10px;height:clamp(460px,62vh,600px);overflow-y:auto;">
+      <div class="liquid-glass" style="padding:16px;display:flex;flex-direction:column;gap:10px;height:clamp(510px,70vh,700px);overflow-y:auto;">
         <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.1em;" data-i18n="rfWinnersFeed">🏆 Победители</div>
         <div id="rf-verify-note" style="display:none;font-size:11px;color:var(--c-gold);background:rgba(255,212,112,0.08);border:1px solid rgba(255,212,112,0.3);border-radius:9px;padding:8px 11px;"></div>
         <div id="rf-winners-feed" style="display:flex;flex-direction:column;gap:10px;"></div>
       </div>
 
-      <div class="liquid-glass rf-control-panel" style="padding:20px 16px;display:flex;flex-direction:column;align-items:stretch;gap:12px;height:clamp(460px,62vh,600px);overflow-y:auto;">
+      <div class="liquid-glass rf-control-panel" style="padding:20px 16px;display:flex;flex-direction:column;align-items:stretch;gap:12px;height:clamp(510px,70vh,700px);overflow-y:auto;">
         <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
           <span id="rf-status-dot" class="rf-status-dot"></span>
           <span style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.1em;" data-i18n="rfControl">Управление</span>
@@ -1298,10 +1187,16 @@
         </div>
       </div>
 
-      <div class="liquid-glass" style="padding:0;display:flex;flex-direction:column;overflow:hidden;height:clamp(460px,62vh,600px);">
-        <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;">
-          <span style="font-family:'Clash Display',sans-serif;font-weight:600;font-size:13px;"><span data-i18n="rfEntrants">Участники</span>: <span id="rf-entrants-count" class="grad-text">0</span></span>
-          <span id="rf-entrants-more" style="font-size:10px;color:var(--c-muted);"></span>
+      <div class="liquid-glass" style="padding:0;display:flex;flex-direction:column;overflow:hidden;height:clamp(510px,70vh,700px);">
+        <div style="padding:11px 12px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:10px;">
+          <span style="font-family:'Clash Display',sans-serif;font-weight:600;font-size:13px;white-space:nowrap;flex-shrink:0;"><span data-i18n="rfEntrants">Участники</span> <span id="rf-entrants-count" class="grad-text">0</span></span>
+          <div id="rf-esearch" class="rf-esearch">
+            <input id="rf-entrants-search" type="text" autocomplete="off" spellcheck="false" oninput="Raffle.searchEntrants(this.value)" onkeydown="if(event.key==='Escape')Raffle.toggleSearch()" data-i18n-ph="rfSearchPh" placeholder="Поиск">
+            <button class="rf-esearch-btn" onclick="Raffle.toggleSearch()" data-i18n-attr="title" data-i18n="rfSearchPh" title="Поиск" aria-label="Поиск">
+              <svg class="rf-ico-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+              <svg class="rf-ico-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
         </div>
         <div id="rf-entrants-list" style="flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:4px;"></div>
       </div>
@@ -1419,6 +1314,15 @@
       </div>
       <div data-i18n-html="rfRulesContent"></div>
     </div>
+
+    <div id="rf-conn-log-panel" class="liquid-glass rf-modal" style="display:none;flex-direction:column;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div class="font-display grad-text" style="font-size:18px;font-weight:700;" data-i18n="rfLogTitle">📡 Лог подключения</div>
+        <button onclick="Raffle.toggleConnLog()" class="rf-iconbtn">✕</button>
+      </div>
+      <div style="font-size:11px;color:var(--c-muted);margin-bottom:10px;" data-i18n="rfLogHint">История подключения к чату Twitch. Регистрация участников не прерывается при сворачивании вкладки или смене сети.</div>
+      <div id="rf-conn-log-list" class="rf-conn-log-list"></div>
+    </div>
   </div>
 
   <!-- ===================== СОНГСАША ===================== -->
@@ -1473,6 +1377,8 @@
     <div id="sb-stage" class="hidden">
       <!-- вкладка «Игра» -->
       <div id="sb-tab-game">
+        <div id="sb-msg-lane-a" class="sb-msg-lane sb-msg-lane-a" aria-hidden="true"></div>
+        <div id="sb-msg-lane-b" class="sb-msg-lane sb-msg-lane-b" aria-hidden="true"></div>
         <div id="sb-battle-head" class="sb-battle-head"></div>
         <div id="sb-cards" class="sb-cards"></div>
         <div id="sb-vote-controls" class="sb-vote-controls"></div>
@@ -1576,24 +1482,24 @@
   <span id="app-footer-label">Угадай зрителя по сообщению</span> · by <a href="https://t.me/rudionee" target="_blank" rel="noopener" style="color:var(--c-accent);text-decoration:none;font-weight:600;">Rudionee</a>
 </div>
 
-<script src="js/tmi.js"></script>
+<script src="js/tmi.js?v=8"></script>
 <script src="js/confetti.js"></script>
 <script src="js/sound.js"></script>
 <script src="js/storage.js"></script>
-<script src="i18n.js?v=7"></script>
+<script src="i18n.js?v=9"></script>
 <script src="js/emotes.js"></script>
 <script src="js/events.js"></script>
 <script src="js/words.js"></script>
 <script src="js/media.js"></script>
 <script src="js/settings.js"></script>
-<script src="js/ui.js?v=7"></script>
+<script src="js/ui.js?v=8"></script>
 <script src="js/modes.js"></script>
 <script src="js/lastcall.js"></script>
 <script src="js/roast.js"></script>
 <script src="js/oracle.js"></script>
-<script src="js/raffle.js"></script>
+<script src="js/raffle.js?v=10"></script>
 <script src="https://w.soundcloud.com/player/api.js"></script>
-<script src="js/songbattle.js?v=7"></script>
-<script src="js/app.js?v=7"></script>
+<script src="js/songbattle.js?v=8"></script>
+<script src="js/app.js?v=8"></script>
 </body>
 </html>

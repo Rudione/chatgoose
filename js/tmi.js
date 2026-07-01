@@ -11,7 +11,15 @@ function Client(o){
     this._keepaliveTimer=null;
     this._watchdogTimer=null;
     this._lastActivity=0;
+    this._status='idle';
+    this._boundWake=null;
+    this._boundOnline=null;
+    this._boundOffline=null;
 }
+Client.STALE_MS=90000;
+Client.KEEPALIVE_MS=25000;
+Client.WATCHDOG_MS=15000;
+
 Client.prototype.on=function(ev,fn){
     this._h[ev]=(this._h[ev]||[]).concat(fn);
     return this;
@@ -20,6 +28,12 @@ Client.prototype._emit=function(ev){
     var a=Array.prototype.slice.call(arguments,1);
     (this._h[ev]||[]).forEach(fn=>{try{fn.apply(null,a);}catch(e){console.error(e);}});
 };
+Client.prototype._setStatus=function(s,info){
+    if(this._status===s)return;
+    this._status=s;
+    this._emit('status',s,info);
+};
+Client.prototype.status=function(){return this._status;};
 Client.prototype.setChannels=function(list){
     this._ch=(list||[]).map(c=>c.toLowerCase().replace('#',''));
     if(this._ws&&this._ws.readyState===1){
@@ -29,14 +43,17 @@ Client.prototype.setChannels=function(list){
 Client.prototype.connect=function(){
     var self=this;
     self._closed=false;
+    self._bindGlobalListeners();
     return new Promise((res,rej)=>{
         self._open(res,rej);
     });
 };
 Client.prototype._open=function(onOk,onErr){
     var self=this;
+    if(self._closed)return;
     if(self._connecting||(self._ws&&(self._ws.readyState===0||self._ws.readyState===1)))return;
     self._connecting=true;
+    self._setStatus('connecting',self._reconnectAttempts);
     var ws;
     try{ws=new WebSocket('wss://irc-ws.chat.twitch.tv:443');}
     catch(e){self._connecting=false;if(onErr)onErr(e);self._scheduleReconnect();return;}
@@ -46,12 +63,15 @@ Client.prototype._open=function(onOk,onErr){
         self._reconnectAttempts=0;
         self._lastActivity=Date.now();
         var r=Math.floor(Math.random()*9999999);
-        ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership');
-        ws.send('PASS oauth:justinfan'+r);
-        ws.send('NICK justinfan'+r);
-        self._ch.forEach(ch=>ws.send('JOIN #'+ch));
+        try{
+            ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership');
+            ws.send('PASS oauth:justinfan'+r);
+            ws.send('NICK justinfan'+r);
+            self._ch.forEach(ch=>ws.send('JOIN #'+ch));
+        }catch(e){}
         self._startKeepalive();
         self._startWatchdog();
+        self._setStatus('connected');
         self._emit('connected');
         if(onOk)onOk();
     };
@@ -62,6 +82,7 @@ Client.prototype._open=function(onOk,onErr){
     ws.onclose=function(){
         self._connecting=false;
         self._stopKeepalive();
+        if(!self._closed){self._setStatus('connecting',self._reconnectAttempts+1);}
         self._emit('disconnected');
         if(!self._closed)self._scheduleReconnect();
     };
@@ -80,6 +101,18 @@ Client.prototype._scheduleReconnect=function(){
         self._open();
     },delay);
 };
+Client.prototype._reconnectNow=function(){
+    var self=this;
+    if(self._closed)return;
+    if(self._reconnectTimer){clearTimeout(self._reconnectTimer);self._reconnectTimer=null;}
+    self._reconnectAttempts=0;
+    var ws=self._ws;
+    self._ws=null;
+    if(ws){try{ws.onopen=ws.onclose=ws.onerror=ws.onmessage=null;ws.close();}catch(e){}}
+    self._connecting=false;
+    self._emit('reconnecting',0);
+    self._open();
+};
 Client.prototype._startKeepalive=function(){
     var self=this;
     self._stopKeepalive();
@@ -87,7 +120,7 @@ Client.prototype._startKeepalive=function(){
         if(self._ws&&self._ws.readyState===1){
             try{self._ws.send('PING :tmi.twitch.tv');}catch(e){}
         }
-    },30000);
+    },Client.KEEPALIVE_MS);
 };
 Client.prototype._stopKeepalive=function(){
     if(this._keepaliveTimer){clearInterval(this._keepaliveTimer);this._keepaliveTimer=null;}
@@ -98,21 +131,52 @@ Client.prototype._startWatchdog=function(){
     self._watchdogTimer=setInterval(function(){
         if(self._closed)return;
         if(!self._ws||self._ws.readyState>1){self._scheduleReconnect();return;}
-        if(self._ws.readyState===1&&self._lastActivity&&(Date.now()-self._lastActivity)>240000){
-            try{self._ws.close();}catch(e){}
+        if(self._ws.readyState===1&&self._lastActivity&&(Date.now()-self._lastActivity)>Client.STALE_MS){
+            self._reconnectNow();
         }
-    },20000);
+    },Client.WATCHDOG_MS);
 };
-Client.prototype.forceCheck=function(){
+Client.prototype._isStale=function(){
+    return !!(this._lastActivity&&(Date.now()-this._lastActivity)>Client.STALE_MS);
+};
+Client.prototype.wake=function(){
     if(this._closed)return;
-    if(!this._ws||this._ws.readyState>1){this._scheduleReconnect();}
+    if(this._reconnectTimer){clearTimeout(this._reconnectTimer);this._reconnectTimer=null;this._reconnectAttempts=0;}
+    if(!this._ws||this._ws.readyState>1){this._reconnectNow();return;}
+    if(this._ws.readyState===0)return;
+    if(this._isStale()){this._reconnectNow();return;}
+    try{this._ws.send('PING :tmi.twitch.tv');}catch(e){this._reconnectNow();}
+};
+Client.prototype.forceCheck=function(){this.wake();};
+Client.prototype._bindGlobalListeners=function(){
+    if(this._boundWake||typeof window==='undefined')return;
+    var self=this;
+    this._boundWake=function(){if(typeof document==='undefined'||!document.hidden)self.wake();};
+    this._boundOnline=function(){self._reconnectNow();};
+    this._boundOffline=function(){self._setStatus('connecting',self._reconnectAttempts+1);};
+    document.addEventListener('visibilitychange',this._boundWake);
+    window.addEventListener('focus',this._boundWake);
+    window.addEventListener('pageshow',this._boundWake);
+    window.addEventListener('online',this._boundOnline);
+    window.addEventListener('offline',this._boundOffline);
+};
+Client.prototype._unbindGlobalListeners=function(){
+    if(!this._boundWake||typeof window==='undefined')return;
+    document.removeEventListener('visibilitychange',this._boundWake);
+    window.removeEventListener('focus',this._boundWake);
+    window.removeEventListener('pageshow',this._boundWake);
+    window.removeEventListener('online',this._boundOnline);
+    window.removeEventListener('offline',this._boundOffline);
+    this._boundWake=this._boundOnline=this._boundOffline=null;
 };
 Client.prototype.disconnect=function(){
     this._closed=true;
+    this._setStatus('idle');
     this._stopKeepalive();
     if(this._watchdogTimer){clearInterval(this._watchdogTimer);this._watchdogTimer=null;}
     if(this._reconnectTimer){clearTimeout(this._reconnectTimer);this._reconnectTimer=null;}
-    if(this._ws){try{this._ws.close();}catch(e){}}
+    this._unbindGlobalListeners();
+    if(this._ws){try{this._ws.close();}catch(e){}this._ws=null;}
 };
 Client.prototype._parseTags=function(str){
     var tags={badges:{}};

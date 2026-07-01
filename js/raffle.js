@@ -6,6 +6,7 @@ const Raffle = {
     msgCount: new Map(),
     winners: [],
     history: [],
+    blocked: new Set(),
     title: '',
     openedAt: 0,
     config: {
@@ -123,7 +124,8 @@ const Raffle = {
                 firstMsgUsers: [...this.firstMsgUsers].slice(-5000),
                 msgCount: [...this.msgCount.entries()].slice(-5000),
                 winners: this.winners.slice(0, 20),
-                history: this.history.slice(0, 20)
+                history: this.history.slice(0, 20),
+                blocked: [...this.blocked].slice(-5000)
             });
         } catch (e) { console.warn('raffle persist fail', e); }
     },
@@ -131,6 +133,7 @@ const Raffle = {
     restore() {
         this.loadSettings();
         const s = Storage.load('cg_raffle_state');
+        this._startAutoSave();
         if (!s) return false;
         this.isOpen = !!s.isOpen;
         this.title = s.title || '';
@@ -141,6 +144,7 @@ const Raffle = {
         this.msgCount = new Map(s.msgCount || []);
         this.winners = s.winners || [];
         this.history = s.history || (s.winners || []).slice();
+        this.blocked = new Set(s.blocked || []);
         return true;
     },
 
@@ -171,6 +175,7 @@ const Raffle = {
         this._renderWinners();
         this._renderSummary();
         this._updateSoundBtn();
+        this._bindConnUI();
         this._persist();
     },
 
@@ -234,6 +239,7 @@ const Raffle = {
         Sound.click();
         this.entrants = new Map();
         this.winners = [];
+        this.blocked = new Set();
         this.isOpen = true;
         this.openedAt = Date.now();
         if (this._winnerTimerIv) { clearInterval(this._winnerTimerIv); this._winnerTimerIv = null; }
@@ -281,9 +287,10 @@ const Raffle = {
 
     onMessage(name, text, tags) {
         const now = Date.now();
-        if (!this.firstSeen.has(name)) this.firstSeen.set(name, now);
+        if (!this.firstSeen.has(name)) { this.firstSeen.set(name, now); this._capMap(this.firstSeen); }
         if (tags['first-msg'] === '1' || tags['first-msg'] === 1) this.firstMsgUsers.add(name);
         this.msgCount.set(name, (this.msgCount.get(name) || 0) + 1);
+        if (this.msgCount.size > 8000) this._capMap(this.msgCount);
 
         const wIdx = this.winners.findIndex(w => w.name === name);
         if (wIdx !== -1) {
@@ -306,16 +313,16 @@ const Raffle = {
 
         if (this.entrants.has(name)) {
             const e = this.entrants.get(name);
-            e.color = tags.color || e.color;
-            this._saveSoon();
+            if (tags.color && e.color !== tags.color) e.color = tags.color;
             return;
         }
-        if (!this.isOpen) { this._saveSoon(); return; }
+        if (!this.isOpen) return;
+        if (this.blocked.has(name)) return;
 
         if (!this.config.joinAnyMsg) {
             const kw = (this.config.keyword || 'join').toLowerCase().replace(/^!+/, '').trim();
             const norm = text.trim().toLowerCase().replace(/^!+\s*/, '').trim();
-            if (norm !== kw) { this._saveSoon(); return; }
+            if (norm !== kw) return;
         }
 
         const role = this._roleOf(tags);
@@ -338,8 +345,17 @@ const Raffle = {
         this._saveSoon();
     },
 
+    _capMap(map, max) {
+        max = max || 8000;
+        const over = map.size - max;
+        if (over <= 0) return;
+        const it = map.keys();
+        for (let i = 0; i < over; i++) { const k = it.next().value; if (k === undefined) break; map.delete(k); }
+    },
+
     removeEntrant(name) {
         this.entrants.delete(name);
+        this.blocked.add(name);
         this._renderEntrants(true);
         this._persist();
         Sound.click();
@@ -354,8 +370,18 @@ const Raffle = {
             if (cnt) cnt.innerText = this.entrants.size;
             const list = document.getElementById('rf-entrants-list');
             if (!list) return;
-            const arr = [...this.entrants.entries()];
-            const shown = arr.slice(-80).reverse();
+            const q = (this._entrantFilter || '').trim().toLowerCase();
+            let arr = [...this.entrants.entries()];
+            let shown;
+            if (q) {
+                shown = arr.filter(([name]) => name.toLowerCase().includes(q)).slice(0, 200).reverse();
+                if (!shown.length) {
+                    list.innerHTML = `<div class="rf-entrant-empty">${t('rfNoMatch') || 'Никого не найдено'}</div>`;
+                    return;
+                }
+            } else {
+                shown = arr.slice(-80).reverse();
+            }
             list.innerHTML = shown.map(([name, e]) => `
                 <div class="rf-entrant-row">
                   <span class="rf-entrant-badges">${e.badges || '👤'}</span>
@@ -363,9 +389,23 @@ const Raffle = {
                   <span class="rf-entrant-tickets">${e.tickets} 🎟</span>
                   <button class="rf-entrant-x" onclick="Raffle.removeEntrant('${name.replace(/'/g, "\\'")}')">✕</button>
                 </div>`).join('');
-            const more = document.getElementById('rf-entrants-more');
-            if (more) more.innerText = arr.length > 80 ? `+ ${t('rfMoreEntrants') || 'ещё'} ${arr.length - 80}` : '';
         });
+    },
+
+    searchEntrants(v) {
+        this._entrantFilter = v || '';
+        this._renderEntrants(true);
+    },
+
+    toggleSearch() {
+        Sound.click();
+        const w = document.getElementById('rf-esearch');
+        if (!w) return;
+        const inp = document.getElementById('rf-entrants-search');
+        const open = !w.classList.contains('open');
+        w.classList.toggle('open', open);
+        if (open) { if (inp) { inp.focus(); } }
+        else if (inp) { inp.value = ''; this.searchEntrants(''); }
     },
 
     _weightedPick(pool) {
@@ -510,6 +550,7 @@ const Raffle = {
         if (ov) ov.classList.remove('rf-spin-show');
         if (this._elimSafety) { clearTimeout(this._elimSafety); this._elimSafety = null; }
         if (this._spinTickIv) { clearInterval(this._spinTickIv); this._spinTickIv = null; }
+        if (this._spinRaf) { cancelAnimationFrame(this._spinRaf); this._spinRaf = null; }
         this._spinning = false;
     },
 
@@ -526,8 +567,15 @@ const Raffle = {
 
         const CARD = 148, GAP = 10, STEP = CARD + GAP;
         const TOTAL = 70, WIN_IDX = 60;
+
+        const wrap = document.getElementById('rf-spin-window');
+        const wrapW = wrap ? wrap.clientWidth : Math.min(window.innerWidth * 0.94, 1060);
+        const bufCards = Math.ceil(wrapW / STEP) + 2;
+
         const cards = [];
         for (let i = 0; i < TOTAL; i++) cards.push(i === WIN_IDX ? winner : this._weightedPick(pool));
+        for (let i = 0; i < bufCards; i++) cards.push(cards[i]);
+
         track.style.transition = 'none';
         track.innerHTML = cards.map(n => {
             const e = this.entrants.get(n) || { color: '#9ca3af' };
@@ -537,48 +585,71 @@ const Raffle = {
             </div>`;
         }).join('');
 
-        const wrap = document.getElementById('rf-spin-window');
-        const wrapW = wrap ? wrap.clientWidth : Math.min(window.innerWidth * 0.94, 1060);
+        const stripW = TOTAL * STEP;
         const jitter = (Math.random() - 0.5) * CARD * 0.5;
-        const target = WIN_IDX * STEP + CARD / 2 - wrapW / 2 + jitter;
+        const finalRest = WIN_IDX * STEP + CARD / 2 - wrapW / 2 + jitter;
         track.style.transform = 'translateX(0px)';
         void track.offsetWidth;
 
         const dur = this.config.spinSec;
-        track.style.transition = `transform ${dur}s cubic-bezier(0.12, 0.82, 0.22, 1)`;
-        track.style.transform = `translateX(${-target}px)`;
 
-        if (this.config.sound) {
-            Sound.go();
-            let lastIdx = -1, lastTx = -1, stable = 0;
-            this._spinTickIv = setInterval(() => {
-                if (!this._spinning) { clearInterval(this._spinTickIv); this._spinTickIv = null; return; }
-                let tx = 0;
-                const st = getComputedStyle(track).transform;
-                if (st && st !== 'none') {
-                    const m = st.match(/matrix(3d)?\(([^)]+)\)/);
-                    if (m) { const p = m[2].split(',').map(s => parseFloat(s)); tx = Math.abs((m[1] ? p[12] : p[4]) || 0); }
-                }
-                if (lastTx >= 0 && Math.abs(tx - lastTx) < 0.4) {
-                    stable++;
-                    if (stable > 5) { clearInterval(this._spinTickIv); this._spinTickIv = null; return; }
-                } else { stable = 0; }
-                lastTx = tx;
-                const idx = Math.floor((tx + wrapW / 2) / STEP);
-                if (idx !== lastIdx && idx >= 0) { lastIdx = idx; Sound.tick(); }
-            }, 30);
-        }
+        const V_TARGET = 16 * STEP;
+        const kMid = 0.6;
+        const tIn = Math.min(0.35, dur * 0.10);
+        const tDecel = Math.max(1.8, dur * 0.38);
+        const tc = Math.max(tIn, dur - tDecel);
+        const cruiseLen = Math.max(0, tc - tIn);
+        const shapeTotal = Math.max(0.001, tIn / 2 + cruiseLen * (1 + kMid) / 2 + tDecel * kMid / 3);
+        const loops = Math.max(1, Math.round((V_TARGET * shapeTotal - finalRest) / stripW));
+        const totalDist = loops * stripW + finalRest;
+        const Vc = totalDist / shapeTotal;
 
-        const totalMs = dur * 1000 + 80;
-        setTimeout(() => {
-            if (this._spinTickIv) { clearInterval(this._spinTickIv); this._spinTickIv = null; }
+        const smooth = x => x * x * (3 - 2 * x);
+        const velAt = t => {
+            if (t <= 0) return 0;
+            if (t < tIn) return Vc * smooth(t / tIn);
+            if (t < tc) return Vc * (1 - (1 - kMid) * (t - tIn) / (cruiseLen || 1));
+            if (t >= dur) return 0;
+            const p = (t - tc) / tDecel;
+            const decel = (1 - p) * (1 - p);
+            const entry = smooth(Math.min(1, p / 0.15));
+            return Vc * kMid * (decel * entry + (1 - entry));
+        };
+        const M = 1400, cum = new Float64Array(M + 1), dt = dur / M;
+        let acc = 0;
+        for (let i = 1; i <= M; i++) { acc += (velAt((i - 1) * dt) + velAt(i * dt)) * 0.5 * dt; cum[i] = acc; }
+        const rawTotal = cum[M] || 1;
+        const travel = e => {
+            if (e <= 0) return 0;
+            if (e >= dur) return totalDist;
+            const x = e / dt, i = x | 0, f = x - i;
+            return (cum[i] + (cum[i + 1] - cum[i]) * f) / rawTotal * totalDist;
+        };
+
+        const soundOn = this.config.sound;
+        if (soundOn) Sound.go();
+        const t0 = performance.now();
+        let lastIdx = -1, lastTick = 0;
+        const frame = now => {
+            if (!this._spinning) return;
+            const e = (now - t0) / 1000;
+            const traveled = travel(e);
+            const x = e >= dur ? finalRest : traveled % stripW;
+            track.style.transform = `translateX(${-x}px)`;
+            if (soundOn) {
+                const idx = Math.floor(traveled / STEP);
+                if (idx !== lastIdx) { lastIdx = idx; if (now - lastTick > 32) { lastTick = now; Sound.tick(); } }
+            }
+            if (e < dur) { this._spinRaf = requestAnimationFrame(frame); return; }
+            this._spinRaf = null;
+            track.style.transform = `translateX(${-finalRest}px)`;
             const winCard = track.children[WIN_IDX];
             if (winCard) winCard.classList.add('rf-card-win');
-            setTimeout(() => {
-                this._forceCloseOverlay();
-                this._finishWinner(winner);
-            }, 1100);
-        }, totalMs);
+            setTimeout(() => { this._forceCloseOverlay(); this._finishWinner(winner); }, 1100);
+        };
+        this._spinRaf = requestAnimationFrame(frame);
+
+        const totalMs = dur * 1000 + 80;
         setTimeout(() => { if (this._spinning) { this._forceCloseOverlay(); this._finishWinner(winner); } }, totalMs + 2600);
     },
 
@@ -707,6 +778,7 @@ const Raffle = {
         this.history.unshift(rec);
         this.history = this.history.slice(0, 20);
 
+        this.blocked.add(winner);
         if (this.config.removeWinner) this.entrants.delete(winner);
         this._renderEntrants(true);
         this._renderWinners();
@@ -1099,6 +1171,62 @@ const Raffle = {
             ${msgsHtml}
         `;
     },
+
+    _startAutoSave() {
+        if (this._autoSaveIv) return;
+        this._autoSaveIv = setInterval(() => { if (this.isOpen) this._persist(); }, 12000);
+    },
+    _stopAutoSave() { if (this._autoSaveIv) { clearInterval(this._autoSaveIv); this._autoSaveIv = null; } },
+
+    _bindConnUI() {
+        if (!this._connUnsub && window.app && app.onConn) {
+            this._connUnsub = app.onConn((status, log) => this._renderConnStatus(status, log));
+        }
+        const p = document.getElementById('rf-conn-log-panel');
+        if (p && !this._connLogOpen) p.style.display = 'none';
+        this._renderConnStatus(window.app && app.connStatus, window.app && app.connLog);
+    },
+
+    _renderConnStatus(status, log) {
+        const dot = document.getElementById('rf-conn-dot');
+        if (!dot) return;
+        const map = {
+            connected: { cls: 'ok', txt: t('rfConnOk') || 'В сети' },
+            connecting: { cls: 'wait', txt: t('rfConnWait') || 'Подключение' },
+            idle: { cls: 'off', txt: t('rfConnOff') || 'Нет связи' }
+        };
+        const s = map[status] || map.idle;
+        dot.className = 'rf-conn-dot ' + s.cls;
+        const lbl = document.getElementById('rf-conn-label');
+        if (lbl) lbl.innerText = s.txt;
+        if (this._connLogOpen) this._renderConnLog(log);
+    },
+
+    toggleConnLog() {
+        Sound.click();
+        const p = document.getElementById('rf-conn-log-panel');
+        if (!p) return;
+        const show = p.style.display === 'none' || !p.style.display;
+        p.style.display = show ? 'flex' : 'none';
+        this._connLogOpen = show;
+        if (show) {
+            const s = document.getElementById('rf-settings-panel'); if (s) s.style.display = 'none';
+            const r = document.getElementById('rf-rules-panel'); if (r) r.style.display = 'none';
+            this._renderConnLog(window.app && app.connLog);
+        }
+    },
+
+    _renderConnLog(log) {
+        const list = document.getElementById('rf-conn-log-list');
+        if (!list) return;
+        const items = (log || []).slice(-50).reverse();
+        if (!items.length) { list.innerHTML = `<div class="rf-empty">${t('rfConnLogEmpty') || 'Событий ещё нет'}</div>`; return; }
+        const ico = type => type === 'ok' ? '🟢' : type === 'warn' ? '🔴' : '🟡';
+        list.innerHTML = items.map(e => `<div class="rf-connlog-row"><span class="rf-connlog-ico">${ico(e.type)}</span><span class="rf-connlog-time">${this._fmtClockSec(e.at)}</span><span class="rf-connlog-tx">${this._escapeHtml(e.text)}</span></div>`).join('');
+    },
+
+    _fmtClockSec(ts) { const d = new Date(ts); const p = n => n.toString().padStart(2, '0'); return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()); },
+    _escapeHtml(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); },
 
     cleanup() {
         this._forceCloseOverlay();

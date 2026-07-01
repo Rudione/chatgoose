@@ -239,6 +239,7 @@ const SongBattle = (function () {
     },
     cleanup() {
       this.isActive = false;
+      this._clearAuthorMsgs();
       this._stopVoteTimer();
       this._unmountEmbeds();
       this._stopViz();
@@ -276,15 +277,11 @@ const SongBattle = (function () {
       this._save();
     },
 
-    /* Регулятор громкости убран: чужими плеерами (Spotify/Apple/Yandex) управлять
-       со страницы нельзя — это кросс-доменные iframe. Стримеру лучше крутить
-       громкость источника в OBS/системе. Заглушки на случай старых вызовов. */
     setVolume() {},
     _reflectVolume() {},
     _applyVolumeToEmbeds() {},
     _pingVolume() {},
 
-    /* ======================= КИК ПОЛЬЗОВАТЕЛЯ ======================= */
     askKick(id) {
       const tk = this._byId(id); if (!tk) return;
       this._kickTarget = { id: id, user: tk.submitter };
@@ -421,6 +418,7 @@ const SongBattle = (function () {
     /* ======================= ОБРАБОТКА ЧАТА ======================= */
     onMessage(name, text, tags) {
       if (!this.isActive) return;
+      this._showAuthorMsg(name, text);
       const raw = (text || '').trim();
       const low = raw.toLowerCase();
       if (this.config.mode === 'chart' && this.state.phase === 'battle') {
@@ -440,6 +438,50 @@ const SongBattle = (function () {
         if (!payload) return;
         this._submit(name, payload, tags || {});
       }
+    },
+
+    /* ===== реплики авторов треков по краям плеера ===== */
+    _battleAuthors() {
+      if (this.config.mode === 'chart') {
+        const tk = this._byId(this._chartCur());
+        return tk ? { a: { name: (tk.submitter || '').toLowerCase(), tk } } : {};
+      }
+      const b = this._curBattle(); if (!b) return {};
+      const ta = this._byId(b.a), tb = this._byId(b.b);
+      return {
+        a: ta ? { name: (ta.submitter || '').toLowerCase(), tk: ta } : null,
+        b: tb ? { name: (tb.submitter || '').toLowerCase(), tk: tb } : null
+      };
+    },
+    _showAuthorMsg(name, text) {
+      if (this.state.phase !== 'battle' || this._tab !== 'game') return;
+      const low = (text || '').trim().toLowerCase();
+      if (!low) return;
+      if (/^!?\d+$/.test(low)) return;
+      if (low === '!' + this.config.command || low.startsWith('!' + this.config.command + ' ')) return;
+      const authors = this._battleAuthors();
+      const uname = (name || '').toLowerCase();
+      let side = null, entry = null;
+      if (authors.a && uname === authors.a.name) { side = 'a'; entry = authors.a; }
+      else if (authors.b && uname === authors.b.name) { side = 'b'; entry = authors.b; }
+      if (!side) return;
+      const lane = document.getElementById('sb-msg-lane-' + side);
+      if (!lane) return;
+      const color = (entry.tk && entry.tk.color) || '#a970ff';
+      const el = document.createElement('div');
+      el.className = 'sb-msg-bubble sb-msg-bubble-' + side;
+      el.style.setProperty('--mc', color);
+      let body;
+      try { body = (typeof Emotes !== 'undefined' && Emotes.parse) ? Emotes.parse(text.slice(0, 180)) : esc(text.slice(0, 180)); }
+      catch (e) { body = esc(text.slice(0, 180)); }
+      el.innerHTML = `<span class="sb-msg-bubble-nm" style="color:${color}">${esc(name)}</span><span class="sb-msg-bubble-tx">${body}</span>`;
+      lane.appendChild(el);
+      requestAnimationFrame(() => el.classList.add('in'));
+      while (lane.children.length > 4) lane.removeChild(lane.firstChild);
+      setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 360); }, 5000);
+    },
+    _clearAuthorMsgs() {
+      ['a', 'b'].forEach(s => { const l = document.getElementById('sb-msg-lane-' + s); if (l) l.innerHTML = ''; });
     },
 
     _submit(name, payload, tags) {
@@ -765,8 +807,7 @@ const SongBattle = (function () {
           <div class="sb-lc-artist sb-blurfade">${artist}</div>
         </div>
         <span class="sb-src-badge" style="--sc:${sm.color}" title="${sm.label}">${this.icon(tk.source)}</span>
-        ${this._avatar(tk)}
-        <a class="sb-lc-by" style="color:${tk.color}" href="https://twitch.tv/${encodeURIComponent((tk.submitter || '').toLowerCase())}" target="_blank" rel="noopener" title="${esc(tk.submitter)}">${esc(tk.submitter)}</a>
+        <a class="sb-lc-by" style="color:${tk.color}" href="https://twitch.tv/${encodeURIComponent((tk.submitter || '').toLowerCase())}" target="_blank" rel="noopener" title="${esc(tk.submitter)}">${this._avatar(tk, 'sb-av-sm')}<span class="sb-by-name">${esc(tk.submitter)}</span></a>
         ${this.state.phase === 'lobby' ? `<button class="sb-lc-kick" title="${tr('sbKick', 'Исключить зрителя')}" onclick="SongBattle.askKick('${tk.id}')">${this.icon('door')}</button>
         <button class="sb-lc-del" title="${tr('sbRemove', 'Убрать трек')}" onclick="SongBattle.removeTrack('${tk.id}')">${this.icon('close')}</button>` : ''}
       </div>`;
@@ -855,7 +896,6 @@ const SongBattle = (function () {
       return map[k] || (tr('sbRoundOf', '1/') + (slots / 2) + ' ' + tr('sbRoundOf2', 'финала'));
     },
 
-    /* ======================= ЭКРАН БАТТЛА ======================= */
     _curBattle() {
       if (this.config.mode === 'king') return this.state.kingBattle || null;
       const r = this.state.rounds[this.state.ri]; return r ? r.battles[this.state.bi] : null;
@@ -950,6 +990,7 @@ const SongBattle = (function () {
 
     _renderBattleCards() {
       const b = this._curBattle(); if (!b) return;
+      this._clearAuthorMsgs();
       const ta = this._byId(b.a), tb = this._byId(b.b);
       const wrap = document.getElementById('sb-cards'); if (!wrap || !ta || !tb) return;
       const blind = this.config.blind && this.config.mode !== 'king' && !b.locked;
@@ -1005,6 +1046,7 @@ const SongBattle = (function () {
     _renderChart() {
       const id = this._chartCur(); const tk = this._byId(id);
       const wrap = document.getElementById('sb-cards'); if (!wrap || !tk) return;
+      this._clearAuthorMsgs();
       wrap.classList.add('sb-cards-champ');
       const fx = document.getElementById('sb-fx');
       if (fx) { const c = tk.tint || (SOURCE_META[tk.source] || SOURCE_META.text).color; fx.style.setProperty('--tintA', c); fx.style.setProperty('--tintB', c); fx.classList.add('sb-playing'); }
@@ -1182,6 +1224,7 @@ const SongBattle = (function () {
     chooseWinner(side) {
       const b = this._curBattle(); if (!b || b._advancing) return;
       b._advancing = true;
+      this._clearAuthorMsgs();
       if (this.state.voting) { this._stopVoteTimer(); this.state.voting = false; }
       b.winner = side === 'a' ? b.a : b.b;
       b.locked = true;
@@ -1352,8 +1395,7 @@ const SongBattle = (function () {
             ${this._coverHTML(tk, 'sb-song-cov')}
             <div class="sb-song-meta"><div class="sb-song-tit sb-blurfade">${titleTx}</div><div class="sb-song-art sb-blurfade">${artTx}</div></div>
             <span class="sb-src-badge" style="--sc:${sm.color}">${this.icon(tk.source)}</span>
-            ${this._avatar(tk, 'sb-av-sm')}
-            <span class="sb-song-by" style="color:${tk.color}">${esc(tk.submitter)}</span>
+            <span class="sb-song-byg">${this._avatar(tk, 'sb-av-sm')}<span class="sb-song-by" style="color:${tk.color}">${esc(tk.submitter)}</span></span>
           </div>`;
       }).join('');
     },
@@ -1508,7 +1550,7 @@ const SongBattle = (function () {
           if (cv.height !== h) cv.height = h;
           ctx.clearRect(0, 0, w, h);
           const bw = w / bars;
-          const growDown = idx === 0; // верх — вниз, низ — вверх
+          const growDown = idx === 0; 
           for (let i = 0; i < bars; i++) {
             const cdist = 1 - Math.abs(i - bars / 2) / (bars / 2);
             const n = (Math.sin(t * 1.6 * spd[i] + phase[i]) * 0.5 + 0.5) * 0.55
