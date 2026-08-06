@@ -1,0 +1,1551 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://w.soundcloud.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' https: data:; media-src 'self' https:; connect-src 'self' https: wss://irc-ws.chat.twitch.tv; frame-ancestors 'none'; form-action 'none'; upgrade-insecure-requests; frame-src https://www.youtube.com https://open.spotify.com https://w.soundcloud.com https://embed.music.apple.com https://music.yandex.ru; object-src 'none'; base-uri 'self'; ">
+<title data-i18n="title">TWITCHONE</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="apple-touch-icon" href="assets/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=21">
+<style>html{background:#06060f}html.booting #app-root,html.booting #top-controls,html.booting #fab-stack,html.booting #btn-exit-game{visibility:hidden}#boot-splash{position:fixed;inset:0;z-index:9999;background:#06060f;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px}</style>
+<script>if(window.top!==window.self){try{window.top.location=window.self.location.href;}catch(e){document.documentElement.innerHTML='';throw new Error('framed');}}document.documentElement.className+=' booting';window.addEventListener('error',function(){document.documentElement.classList.remove('booting');});setTimeout(function(){document.documentElement.classList.remove('booting');var s=document.getElementById('boot-splash');if(s)s.remove();},6000);</script>
+</head>
+<body>
+<div id="boot-splash"><div class="bs-logo">TWITCHONE</div><div class="bs-bar"></div></div>
+<canvas id="bg-canvas"></canvas>
+<canvas id="cursor-canvas"></canvas>
+<div id="timer-vignette"></div>
+
+<div id="top-controls" style="position:fixed;top:18px;left:18px;z-index:60;display:flex;gap:8px;align-items:center;">
+  <button class="ctrl-btn" id="btn-nav-back" onclick="app.navBack()" style="display:none;width:auto;padding:0 14px;gap:7px;font-family:'Clash Display',sans-serif;font-weight:600;font-size:13px;">
+    <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg><span id="btn-nav-back-label" data-i18n="navBack">Назад</span>
+  </button>
+  <button class="ctrl-btn" id="btn-settings" onclick="app.openSettings()" style="display:none;width:auto;padding:0 14px;gap:7px;font-family:'Clash Display',sans-serif;font-weight:600;font-size:13px;">
+    <span>⚙️</span><span data-i18n="settingsBtnInBox">Настройки</span>
+  </button>
+  <button class="ctrl-btn" id="btn-sound" onclick="app.toggleSound()"><span>🔊</span><span class="ctrl-tip" data-i18n="soundTip">Звук</span></button>
+  <button class="ctrl-btn" id="btn-events" onclick="app.toggleEvents()"><span>🔔</span><span class="ctrl-tip" data-i18n="eventsTip">Оповещения</span></button>
+</div>
+
+<button id="btn-exit-game" onclick="app.exitGame()" style="display:none;position:fixed;top:18px;left:18px;z-index:60;align-items:center;gap:7px;padding:9px 15px;background:rgba(255,107,145,0.13);border:1px solid rgba(255,107,145,0.32);border-radius:13px;cursor:pointer;color:var(--c-red);font-family:'Clash Display',sans-serif;font-weight:700;font-size:13px;transition:all .2s;">
+  <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg> Выйти
+</button>
+
+<div id="fab-stack" style="position:fixed;top:18px;right:18px;z-index:61;display:flex;gap:8px;align-items:center;">
+  <div id="tw-acc-badge" class="tw-acc-badge"></div>
+  <div id="rf-channel-fab" onclick="Raffle.openChannelSwitch()" title="Сменить канал" style="display:none;align-items:center;gap:8px;background:rgba(20,20,52,0.66);backdrop-filter:blur(18px);border:1px solid var(--c-border);border-radius:50px;padding:6px 13px 6px 11px;cursor:pointer;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--c-accent)" style="flex-shrink:0;"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
+    <span style="font-size:12px;font-weight:700;color:var(--c-accent);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="rf-channel-name">—</span>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--c-muted)" stroke-width="2.5" style="flex-shrink:0;"><path d="M9 18l6-6-6-6"/></svg>
+  </div>
+  <div id="sb-channel-fab" onclick="SongBattle.openChannelSwitch()" title="Сменить канал" style="display:none;align-items:center;gap:8px;background:rgba(20,20,52,0.66);backdrop-filter:blur(18px);border:1px solid var(--c-border);border-radius:50px;padding:6px 13px 6px 11px;cursor:pointer;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--c-accent)" style="flex-shrink:0;"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
+    <span style="font-size:12px;font-weight:700;color:var(--c-accent);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" id="sb-channel-name">—</span>
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--c-muted)" stroke-width="2.5" style="flex-shrink:0;"><path d="M9 18l6-6-6-6"/></svg>
+  </div>
+  <button id="sb-newgame-fab" onclick="SongBattle.newBattle()" title="Начать новую игру" style="display:none;align-items:center;gap:7px;background:rgba(20,20,52,0.66);backdrop-filter:blur(18px);border:1px solid var(--c-border);border-radius:50px;padding:7px 14px 7px 12px;cursor:pointer;color:var(--c-text);font-family:'Clash Display',sans-serif;font-weight:700;font-size:12px;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-green)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.4 2.6L3 8"/><path d="M3 4v4h4"/></svg>
+    <span data-i18n="sbNewGame">Новая игра</span>
+  </button>
+  <div style="display:flex;gap:3px;align-items:center;background:rgba(20,20,52,0.66);backdrop-filter:blur(18px);border:1px solid var(--c-border);border-radius:50px;padding:5px 10px 5px 8px;">
+    <span style="font-size:15px;opacity:.65;">🌐</span>
+    <button data-lang="ru" onclick="switchLang('ru')" class="lang-btn active">RU</button>
+    <button data-lang="en" onclick="switchLang('en')" class="lang-btn">EN</button>
+    <button data-lang="uk" onclick="switchLang('uk')" class="lang-btn">UA</button>
+  </div>
+  <div id="fab-rules" class="fab" onclick="app.openRules()"><span>📖</span><span data-i18n="rulesBtn">Правила</span></div>
+  <div id="fab-faq" class="fab" onclick="app.openFaq()"><span>❓</span><span>FAQ</span></div>
+</div>
+
+<div id="settings-scrim" onclick="app.closeSettings()"></div>
+<div id="settings-panel" class="liquid-glass">
+  <div class="settings-head">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div class="font-display grad-text" style="font-size:22px;font-weight:700;" data-i18n="settingsTitle">⚙️ Настройки</div>
+      <button onclick="app.closeSettings()" style="width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);font-size:18px;">✕</button>
+    </div>
+    <div style="display:flex;gap:6px;background:rgba(255,255,255,0.025);border-radius:14px;padding:5px;margin-top:12px;">
+      <button class="tab-btn active" id="tab-game"  onclick="app.switchTab('game')"  data-i18n="tabGame">🎮 Игра</button>
+      <button class="tab-btn"        id="tab-modes" onclick="app.switchTab('modes')" data-i18n="tabModes">⚡ Режимы</button>
+      <button class="tab-btn"        id="tab-timer" onclick="app.switchTab('timer')" data-i18n="tabTimer">⏱ Таймер</button>
+    </div>
+  </div>
+  <div class="settings-inner">
+    <div id="settings-game" class="glass2" style="padding:16px;">
+      <div style="margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:12px;color:var(--c-muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;" data-i18n="playersSlider">Игроков в чате</span>
+          <span id="slider-val" class="font-display" style="font-size:21px;font-weight:700;color:var(--c-accent);">20</span>
+        </div>
+        <input type="range" id="users-slider" min="4" max="100" value="20" step="1" oninput="app.updateSlider(this)">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <label class="toggle-wrap glass2" style="padding:11px;cursor:pointer;"><div class="toggle"><input type="checkbox" id="opt-repeat" checked><div class="toggle-slider"></div></div><div><div style="font-size:12px;font-weight:600;" data-i18n="repeatPlayers">Повтор игроков</div><div style="font-size:10px;color:var(--c-muted);" data-i18n="repeatPlayersDesc">До 3 сообщ. от юзера</div></div></label>
+        <label class="toggle-wrap glass2" style="padding:11px;cursor:pointer;"><div class="toggle"><input type="checkbox" id="opt-badges" checked><div class="toggle-slider"></div></div><div><div style="font-size:12px;font-weight:600;" data-i18n="twitchBadges">Бейджики Twitch</div><div style="font-size:10px;color:var(--c-muted);" data-i18n="twitchBadgesDesc">Слева от ника</div></div></label>
+        <label class="toggle-wrap glass2" style="padding:11px;cursor:pointer;"><div class="toggle"><input type="checkbox" id="opt-final" checked><div class="toggle-slider"></div></div><div><div style="font-size:12px;font-weight:600;" data-i18n="finalRound">Финальный раунд</div><div style="font-size:10px;color:var(--c-muted);" data-i18n="finalRoundDesc">Перетащи кто что написал</div></div></label>
+        <label class="toggle-wrap glass2" style="padding:11px;cursor:pointer;"><div class="toggle"><input type="checkbox" id="opt-media" checked><div class="toggle-slider"></div></div><div><div style="font-size:12px;font-weight:600;" data-i18n="mediaLinks">Ссылки/медиа</div><div style="font-size:10px;color:var(--c-muted);" data-i18n="mediaLinksDesc">Spotify, YouTube превью</div></div></label>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);">
+        <div style="font-size:11px;color:var(--c-muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;" data-i18n="whoParticipates">Кто может участвовать</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <label class="access-radio"><input type="radio" name="access" value="all"      checked> <span data-i18n="accessAll">Все</span></label>
+          <label class="access-radio"><input type="radio" name="access" value="sub">             <span data-i18n="accessSub">Сабы</span></label>
+          <label class="access-radio"><input type="radio" name="access" value="vip">             <span data-i18n="accessVip">VIP/Модеры</span></label>
+          <label class="access-radio"><input type="radio" name="access" value="follower">        <span data-i18n="accessFollower">Фолловеры</span></label>
+        </div>
+      </div>
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:12px;color:var(--c-muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;" data-i18n="perfLabel">Производительность</span>
+          <span id="perf-fps" class="font-display" style="font-size:12px;font-weight:700;color:var(--c-accent);"></span>
+        </div>
+        <div class="perf-seg" id="perf-seg">
+          <button data-perfmode="auto" onclick="app.setPerfMode('auto')" data-i18n="perfAuto">Авто</button>
+          <button data-perfmode="high" onclick="app.setPerfMode('high')" data-i18n="perfHigh">Высокое</button>
+          <button data-perfmode="medium" onclick="app.setPerfMode('medium')" data-i18n="perfMedium">Среднее</button>
+          <button data-perfmode="low" onclick="app.setPerfMode('low')" data-i18n="perfLow">Экономия</button>
+        </div>
+        <div class="perf-note" id="perf-note" data-i18n="perfNote">Если сайт тормозит — выбери «Экономия»: отключатся размытия и фоновые эффекты.</div>
+      <div class="sec-block">
+        <div class="sec-row">
+          <span class="sec-title" data-i18n="secTitle">Безопасность</span>
+        </div>
+        <label class="sec-row" style="cursor:pointer;">
+          <span style="font-size:12px;" data-i18n="secAuthEnabled">Вход через Twitch</span>
+          <input type="checkbox" id="sec-auth-enabled" onchange="app.toggleAuth(this.checked)">
+        </label>
+        <div class="sec-note" id="sec-auth-note"></div>
+        <label class="sec-row" style="cursor:pointer;">
+          <span style="font-size:12px;" data-i18n="secStreamSafe">Режим стрима (прятать ник и ключи)</span>
+          <input type="checkbox" id="sec-stream-safe" onchange="app.toggleStreamSafe(this.checked)">
+        </label>
+        <div class="sec-note" id="sec-safe-hint" data-i18n="secStreamSafeOn">Чувствительные поля размыты. Наведи курсор, чтобы посмотреть.</div>
+        <div class="sec-note" id="sec-token-info"></div>
+        <button class="sec-btn" onclick="app.revokeAllSessions()" data-i18n="secRevoke">Выйти везде и отозвать токены</button>
+        <button class="sec-btn" onclick="app.panicWipe()" data-i18n="secPanic">Стереть все данные с устройства</button>
+        <div class="sec-note" data-i18n="secNote">Отзыв делает токен нерабочим на стороне Twitch — даже если он куда-то утёк. Обычный выход этого не делает.</div>
+      </div>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);display:flex;justify-content:center;">
+        <button onclick="app.resetSettings()" style="padding:9px 18px;border-radius:11px;background:rgba(255,107,145,0.1);border:1px solid rgba(255,107,145,0.28);cursor:pointer;color:var(--c-red);font-family:'Clash Display',sans-serif;font-weight:600;font-size:12px;" data-i18n="resetSettings">🗑 Сбросить всё</button>
+      </div>
+    </div>
+
+    <div id="settings-modes" class="glass2" style="padding:16px;display:none;">
+      <div style="font-size:11px;color:var(--c-muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;" data-i18n="modesLabel">Активные режимы</div>
+      <div style="display:flex;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:12px;overflow:hidden;margin-bottom:12px;">
+        <label class="msg-filter-tab active" style="flex:1;cursor:pointer;text-align:center;padding:9px;display:flex;align-items:center;justify-content:center;gap:6px;">
+          <input type="radio" name="msgfilter" value="all" checked style="display:none;">
+          <span>💬</span><span style="font-family:'Clash Display',sans-serif;font-weight:600;font-size:13px;" data-i18n="modeAll">Все сообщения</span>
+        </label>
+        <div style="width:1px;background:rgba(255,255,255,0.09);"></div>
+        <label class="msg-filter-tab" style="flex:1;cursor:pointer;text-align:center;padding:9px;display:flex;align-items:center;justify-content:center;gap:6px;">
+          <input type="radio" name="msgfilter" value="links" style="display:none;">
+          <span>🔗</span><span style="font-family:'Clash Display',sans-serif;font-weight:600;font-size:13px;" data-i18n="modeLinks">Только ссылки</span>
+        </label>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <div style="flex:1;font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;" data-i18n="modeColMode">Режим</div>
+        <div style="width:64px;text-align:center;font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;" data-i18n="modeColWeight">% шанс</div>
+        <div style="width:56px;text-align:center;font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;" data-i18n="modeColRounds">раундов</div>
+      </div>
+      <div id="modes-grid" style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;">
+        <div class="mode-row glass2"><label class="toggle"><input type="checkbox" id="mode-classic" checked onchange="Settings.onModeToggle()"><div class="toggle-slider"></div></label><div class="mode-row-text"><div data-i18n="modeClassic">🎯 Классика</div><div data-i18n="modeClassicDesc">Угадай автора</div></div><div class="mode-row-w"><input type="number" id="mw-classic" min="1" max="97" value="25" onchange="Settings.onWeightEdit('classic')"><span>%</span></div><input type="number" id="mr-classic" min="0" max="99" placeholder="∞" class="mode-row-r" onchange="Settings.read()"></div>
+        <div class="mode-row glass2"><label class="toggle"><input type="checkbox" id="mode-tf" checked onchange="Settings.onModeToggle()"><div class="toggle-slider"></div></label><div class="mode-row-text"><div data-i18n="modeTF">🤔 Правда/Фейк</div><div data-i18n="modeTFDesc">Подмена слова</div></div><div class="mode-row-w"><input type="number" id="mw-tf" min="1" max="97" value="20" onchange="Settings.onWeightEdit('tf')"><span>%</span></div><input type="number" id="mr-tf" min="0" max="99" placeholder="∞" class="mode-row-r" onchange="Settings.read()"></div>
+        <div class="mode-row glass2"><label class="toggle"><input type="checkbox" id="mode-censor" checked onchange="Settings.onModeToggle()"><div class="toggle-slider"></div></label><div class="mode-row-text"><div data-i18n="modeCensor">🔤 Пропущ. слово</div><div data-i18n="modeCensorDesc">Что между слов</div></div><div class="mode-row-w"><input type="number" id="mw-censor" min="1" max="97" value="20" onchange="Settings.onWeightEdit('censor')"><span>%</span></div><input type="number" id="mr-censor" min="0" max="99" placeholder="∞" class="mode-row-r" onchange="Settings.read()"></div>
+        <div class="mode-row glass2"><label class="toggle"><input type="checkbox" id="mode-tf2" checked onchange="Settings.onModeToggle()"><div class="toggle-slider"></div></label><div class="mode-row-text"><div data-i18n="modeTF2">💬 Что написал?</div><div data-i18n="modeTF2Desc">4 варианта чата</div></div><div class="mode-row-w"><input type="number" id="mw-tf2" min="1" max="97" value="3" onchange="Settings.onWeightEdit('tf2')"><span>%</span></div><input type="number" id="mr-tf2" min="0" max="99" placeholder="∞" class="mode-row-r" onchange="Settings.read()"></div>
+        <div class="mode-row glass2"><label class="toggle"><input type="checkbox" id="mode-modview" checked onchange="Settings.onModeToggle()"><div class="toggle-slider"></div></label><div class="mode-row-text"><div data-i18n="modeModview">🛡️ Модер/Зритель</div><div data-i18n="modeModviewDesc">Кто написал?</div></div><div class="mode-row-w"><input type="number" id="mw-modview" min="1" max="97" value="3" onchange="Settings.onWeightEdit('modview')"><span>%</span></div><input type="number" id="mr-modview" min="0" max="99" placeholder="∞" class="mode-row-r" onchange="Settings.read()"></div>
+        <div class="mode-row glass2"><label class="toggle"><input type="checkbox" id="mode-media" checked onchange="Settings.onModeToggle()"><div class="toggle-slider"></div></label><div class="mode-row-text"><div data-i18n="modeMedia">🖼️ Кто скинул?</div><div data-i18n="modeMediaDesc">Ссылки/YouTube</div></div><div class="mode-row-w"><input type="number" id="mw-media" min="1" max="97" value="3" onchange="Settings.onWeightEdit('media')"><span>%</span></div><input type="number" id="mr-media" min="0" max="99" placeholder="∞" class="mode-row-r" onchange="Settings.read()"></div>
+        <div class="mode-row glass2"><label class="toggle"><input type="checkbox" id="mode-emote" checked onchange="Settings.onModeToggle()"><div class="toggle-slider"></div></label><div class="mode-row-text"><div data-i18n="modeEmote">😎 Смайл/слово?</div><div data-i18n="modeEmoteDesc">Эмоут или текст</div></div><div class="mode-row-w"><input type="number" id="mw-emote" min="1" max="97" value="3" onchange="Settings.onWeightEdit('emote')"><span>%</span></div><input type="number" id="mr-emote" min="0" max="99" placeholder="∞" class="mode-row-r" onchange="Settings.read()"></div>
+        <div class="mode-row glass2"><label class="toggle"><input type="checkbox" id="mode-detective" checked onchange="Settings.onModeToggle()"><div class="toggle-slider"></div></label><div class="mode-row-text"><div data-i18n="modeDetective">🕵️ Свой почерк</div><div data-i18n="modeDetectiveDesc">2-е сообщ. юзера</div></div><div class="mode-row-w"><input type="number" id="mw-detective" min="1" max="97" value="3" onchange="Settings.onWeightEdit('detective')"><span>%</span></div><input type="number" id="mr-detective" min="0" max="99" placeholder="∞" class="mode-row-r" onchange="Settings.read()"></div>
+        <div class="mode-row glass2"><label class="toggle"><input type="checkbox" id="mode-firstword" checked onchange="Settings.onModeToggle()"><div class="toggle-slider"></div></label><div class="mode-row-text"><div data-i18n="modeFirstword">🔠 Первое слово</div><div data-i18n="modeFirstwordDesc">Начало сообщения</div></div><div class="mode-row-w"><input type="number" id="mw-firstword" min="1" max="97" value="3" onchange="Settings.onWeightEdit('firstword')"><span>%</span></div><input type="number" id="mr-firstword" min="0" max="99" placeholder="∞" class="mode-row-r" onchange="Settings.read()"></div>
+        <div class="mode-row glass2"><label class="toggle"><input type="checkbox" id="mode-2of4" checked onchange="Settings.onModeToggle()"><div class="toggle-slider"></div></label><div class="mode-row-text"><div data-i18n="mode2of4">👥 Два из четырёх</div><div data-i18n="mode2of4Desc">Найди 2 сообщ.</div></div><div class="mode-row-w"><input type="number" id="mw-2of4" min="1" max="97" value="3" onchange="Settings.onWeightEdit('2of4')"><span>%</span></div><input type="number" id="mr-2of4" min="0" max="99" placeholder="∞" class="mode-row-r" onchange="Settings.read()"></div>
+        <div class="mode-row glass2"><label class="toggle"><input type="checkbox" id="mode-7tv" checked onchange="Settings.onModeToggle()"><div class="toggle-slider"></div></label><div class="mode-row-text"><div data-i18n="mode7tv">🎨 7TV смайл</div><div data-i18n="mode7tvDesc">Угадай смайл</div></div><div class="mode-row-w"><input type="number" id="mw-7tv" min="1" max="97" value="3" onchange="Settings.onWeightEdit('7tv')"><span>%</span></div><input type="number" id="mr-7tv" min="0" max="99" placeholder="∞" class="mode-row-r" onchange="Settings.read()"></div>
+        <div class="mode-row glass2"><label class="toggle"><input type="checkbox" id="mode-emoji-chain" onchange="Settings.onModeToggle()"><div class="toggle-slider"></div></label><div class="mode-row-text"><div data-i18n="modeEmojiChain">🔗 Эмоджи-цепочка</div><div data-i18n="modeEmojiChainDesc">Угадай по эмодзи</div></div><div class="mode-row-w"><input type="number" id="mw-emoji-chain" min="1" max="97" value="3" onchange="Settings.onWeightEdit('emoji-chain')"><span>%</span></div><input type="number" id="mr-emoji-chain" min="0" max="99" placeholder="∞" class="mode-row-r" onchange="Settings.read()"></div>
+        <div class="mode-row glass2"><label class="toggle"><input type="checkbox" id="mode-capscheck" checked onchange="Settings.onModeToggle()"><div class="toggle-slider"></div></label><div class="mode-row-text"><div data-i18n="modeCapscheck">🎯 КАПС или обычно?</div><div data-i18n="modeCapscheckDesc">Регистр сообщения</div></div><div class="mode-row-w"><input type="number" id="mw-capscheck" min="1" max="97" value="3" onchange="Settings.onWeightEdit('capscheck')"><span>%</span></div><input type="number" id="mr-capscheck" min="0" max="99" placeholder="∞" class="mode-row-r" onchange="Settings.read()"></div>
+        <div class="mode-row glass2"><label class="toggle"><input type="checkbox" id="mode-speedrace" checked onchange="Settings.onModeToggle()"><div class="toggle-slider"></div></label><div class="mode-row-text"><div data-i18n="modeSpeedrace">⚡ Кто быстрее?</div><div data-i18n="modeSpeedraceDesc">Что было раньше</div></div><div class="mode-row-w"><input type="number" id="mw-speedrace" min="1" max="97" value="3" onchange="Settings.onWeightEdit('speedrace')"><span>%</span></div><input type="number" id="mr-speedrace" min="0" max="99" placeholder="∞" class="mode-row-r" onchange="Settings.read()"></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;">
+        <div style="font-size:10px;color:var(--c-muted);line-height:1.4;flex:1;" data-i18n="modeWeightsHint">Сумма всегда 100%. «Раундов» — макс. раз тема выпадет за игру (пусто = без лимита).</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          <span id="mw-total" class="font-display" style="font-size:13px;font-weight:700;color:var(--c-green);">100%</span>
+          <button onclick="Settings.autoWeights(true)" class="btn-ghost" style="padding:6px 12px;font-size:11px;" data-i18n="modeAutoBtn">↻ Авто</button>
+        </div>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);">
+        <label class="toggle-wrap glass2" style="padding:10px;cursor:pointer;margin-bottom:8px;display:flex;">
+          <div class="toggle"><input type="checkbox" id="opt-noq"><div class="toggle-slider"></div></div>
+          <div style="flex:1;">
+            <div style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;">
+              <span data-i18n="limitQuestions">Лимит сообщений-вопросов</span>
+              <div style="position:relative;display:inline-block;">
+                <button class="tooltip-btn" onclick="event.stopPropagation();document.getElementById('noq-tip').classList.toggle('show')">?</button>
+                <div id="noq-tip" class="tooltip-pop" data-i18n-html="limitQuestionsTip"></div>
+              </div>
+            </div>
+            <div style="font-size:10px;color:var(--c-muted);" data-i18n="limitQuestionsDesc">Не больше 25% раундов с «?»</div>
+          </div>
+        </label>
+        <div class="glass2" style="padding:10px;">
+          <div style="font-size:12px;font-weight:600;margin-bottom:6px;" data-i18n="modRole">🛡️ Режим «Модер/Зритель»</div>
+          <div style="display:flex;gap:6px;">
+            <label class="access-radio" style="flex:1;justify-content:center;"><input type="radio" name="modrole" value="2">       <span data-i18n="modRole2">Модер/Зритель</span></label>
+            <label class="access-radio" style="flex:1;justify-content:center;"><input type="radio" name="modrole" value="3" checked><span data-i18n="modRole3">Модер/VIP/Зритель</span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="settings-timer" class="glass2" style="padding:16px;display:none;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <label class="toggle-wrap glass2" style="padding:11px;cursor:pointer;"><div class="toggle"><input type="checkbox" id="opt-timer-per" checked onchange="app.toggleTimerMode(this,'per')"><div class="toggle-slider"></div></div><div><div style="font-size:12px;font-weight:600;" data-i18n="perTimer">На вопрос</div><div style="font-size:10px;color:var(--c-muted);" data-i18n="perTimerDesc">Секунд на ход</div></div></label>
+        <label class="toggle-wrap glass2" style="padding:11px;cursor:pointer;"><div class="toggle"><input type="checkbox" id="opt-timer-total" onchange="app.toggleTimerMode(this,'total')"><div class="toggle-slider"></div></div><div><div style="font-size:12px;font-weight:600;" data-i18n="totalTimer">Общий</div><div style="font-size:10px;color:var(--c-muted);" data-i18n="totalTimerDesc">Всего минут</div></div></label>
+      </div>
+      <div id="timer-per-section">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-size:12px;color:var(--c-muted);font-weight:600;" data-i18n="perTimerLabel">Секунд на вопрос</span><span id="timer-per-val" class="font-display" style="color:var(--c-accent);font-weight:700;">30</span></div>
+        <input type="range" id="timer-per-slider" min="5" max="60" value="30" step="5" oninput="document.getElementById('timer-per-val').innerText=this.value">
+      </div>
+      <div id="timer-total-section" style="display:none;margin-top:10px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-size:12px;color:var(--c-muted);font-weight:600;" data-i18n="totalTimerLabel">Всего минут</span><span id="timer-total-val" class="font-display" style="color:var(--c-accent);font-weight:700;">5</span></div>
+        <input type="range" id="timer-total-slider" min="1" max="15" value="5" step="1" oninput="document.getElementById('timer-total-val').innerText=this.value">
+      </div>
+    </div>
+  </div>
+  <div class="settings-footer">
+    <button class="btn-ghost" style="width:100%;padding:14px;font-size:15px;font-family:'Clash Display',sans-serif;font-weight:600;" onclick="app.closeSettings()" data-i18n="doneBtn">ГОТОВО</button>
+  </div>
+</div>
+
+<div id="app-root">
+<div id="app-scenes-wrap">
+  <div id="history-panel" class="glass2" style="position:fixed;right:16px;top:50%;transform:translateY(-50%);width:218px;z-index:5;max-height:78vh;overflow-y:auto;display:none;padding:12px;">
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--c-muted);margin-bottom:10px;" id="history-panel-title" data-i18n="historyLabel">История</div>
+    <div id="history-list"></div>
+  </div>
+  <div id="live-events" style="position:fixed;left:16px;bottom:16px;width:248px;z-index:30;display:none;flex-direction:column;gap:7px;pointer-events:none;"></div>
+
+  <div id="hud" style="display:none;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;width:100%;max-width:680px;">
+    <div class="hud-pill"><span style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;" data-i18n="roundLabel">Раунд</span><span id="round-val" class="font-display" style="font-size:18px;font-weight:700;">1/20</span></div>
+    <div id="streak-badge" class="hidden">x0 🔥</div>
+    <div style="display:flex;gap:8px;">
+      <button class="hint-btn" id="hint-50"     onclick="app.useHint('5050')">½</button>
+      <button class="hint-btn" id="hint-skip"   onclick="app.useHint('skip')"><svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 5l7 7-7 7M5 5l7 7-7 7"/></svg></button>
+      <button class="hint-btn" id="hint-reveal" onclick="app.useHint('reveal')">?</button>
+    </div>
+    <div class="hud-pill"><span style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;" data-i18n="scoreLabel">Очки</span><span id="score-val" class="font-display grad-text" style="font-size:18px;font-weight:700;">0</span></div>
+  </div>
+  <div id="timer-bar-outer" style="display:none;width:100%;max-width:680px;margin-bottom:4px;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:10px;color:var(--c-muted);font-weight:600;" data-i18n="timerLabel">ТАЙМЕР</span><span id="timer-label" class="font-display" style="font-size:14px;font-weight:700;color:var(--c-accent);">30с</span></div>
+    <div style="width:100%;height:6px;background:rgba(255,255,255,0.07);border-radius:10px;overflow:hidden;"><div id="timer-bar" style="height:100%;border-radius:10px;background:linear-gradient(90deg,var(--c-accent),var(--c-accent2));transition:width .1s linear;width:100%;"></div></div>
+  </div>
+
+  
+  <div id="scene-login" class="scene liquid-glass" style="padding:44px 48px 36px;max-width:560px;position:relative;">
+    <div style="text-align:center;margin-bottom:32px;">
+      <div class="font-display logo-shimmer" style="font-size:68px;font-weight:700;line-height:1;letter-spacing:-2px;" data-i18n="title">TWITCHONE</div>
+    </div>
+    <button id="tw-login-btn" class="tw-login-btn" onclick="TwitchAuth.login()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg>
+      <span data-i18n="twLoginBtn">Авторизироваться через Twitch</span>
+    </button>
+    <div id="tw-login-divider" class="tw-login-divider"><span data-i18n="twOrManual">или введи ник вручную</span></div>
+    <div style="position:relative;">
+      <span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);z-index:2;color:var(--c-accent);font-size:17px;pointer-events:none;">📺</span>
+      <input type="text" id="channel-input" class="glass-input" data-i18n="channelPlaceholder" data-i18n-attr="placeholder" placeholder="Никнейм Twitch-канала..." style="width:100%;padding:18px 18px 18px 46px;font-size:18px;font-weight:500;border-radius:15px;">
+    </div>
+    <div id="emote-status" style="margin-top:8px;text-align:center;font-size:11px;color:var(--c-muted);min-height:16px;"></div>
+  </div>
+  <div id="scene-login-actions" style="width:100%;max-width:560px;margin-top:14px;display:flex;flex-direction:column;gap:10px;">
+    <button onclick="app.connect()" class="btn-primary" style="width:100%;padding:18px;font-size:18px;" data-i18n="connectBtn">ПОДКЛЮЧИТЬСЯ</button>
+  </div>
+
+  
+  <div id="scene-mode-select" class="scene hidden" style="max-width:1040px;width:100%;">
+    <div class="liquid-glass" style="padding:18px 22px 14px;margin-bottom:10px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--c-accent),var(--c-accent2),var(--c-blue));"></div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
+        <button onclick="app.goBack()" style="width:36px;height:36px;border-radius:11px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <div style="flex:1;">
+          <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.14em;margin-bottom:3px;" data-i18n="modeSelectKicker">Выбери активность</div>
+          <div class="font-display grad-text" style="font-size:26px;font-weight:700;line-height:1;" data-i18n="modeSelectTitle">Что будем играть?</div>
+        </div>
+        <div id="ms-channel-badge" class="glass2" style="padding:7px 14px;display:flex;align-items:center;gap:8px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="2.5"/><path d="m8 3 4 3 4-3"/></svg>
+          <span id="ms-channel-name" style="font-size:13px;font-weight:700;color:var(--c-accent);"></span>
+        </div>
+      </div>
+    </div>
+
+    <div id="mode-cards" class="ms-cards-host" style="display:flex;flex-direction:column;gap:16px;"></div>
+
+  </div>
+
+  
+  <div id="scene-profile" class="scene hidden" style="max-width:920px;width:100%;">
+    <div class="liquid-glass" style="padding:20px 24px 16px;margin-bottom:14px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--c-accent),var(--c-accent2));"></div>
+      <div style="display:flex;align-items:center;gap:14px;">
+        <button onclick="Profile.close()" style="width:36px;height:36px;border-radius:11px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <div class="font-display grad-text" style="font-size:22px;font-weight:700;" data-i18n="twProfileBtn">Профиль</div>
+      </div>
+    </div>
+    <div id="profile-body"></div>
+  </div>
+
+  
+  <div id="scene-warning-pre" class="scene hidden" style="max-width:580px;width:100%;">
+    <div class="liquid-glass" style="padding:22px 26px;margin-bottom:10px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--c-accent),var(--c-accent2));"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <button onclick="app.goBack()" style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <div style="font-size:11px;color:var(--c-muted);font-weight:600;" data-i18n="warningTitle">Чек-лист перед стартом</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:18px;">
+        <div style="position:relative;flex-shrink:0;">
+          <div id="wp-avatar" style="width:64px;height:64px;border-radius:50%;background:rgba(139,125,255,0.2);display:flex;align-items:center;justify-content:center;font-size:26px;border:2px solid var(--c-accent);box-shadow:0 0 18px rgba(139,125,255,.3);">📺</div>
+          <div style="position:absolute;bottom:1px;right:1px;width:16px;height:16px;border-radius:50%;background:#3fbf7a;border:2px solid var(--c-bg);"></div>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;" data-i18n="channel">Канал</div>
+          <div id="wp-channel-name" class="font-display" style="font-size:22px;font-weight:700;color:var(--c-accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">—</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:10px;color:var(--c-muted);font-weight:600;margin-bottom:2px;" data-i18n="lastResult">Последний</div>
+          <div id="wp-last-all" style="font-size:12px;font-weight:700;">—</div>
+          <div style="font-size:10px;color:var(--c-muted);margin-top:4px;" data-i18n="channel">Этот канал</div>
+          <div id="wp-last-ch" style="font-size:12px;font-weight:700;color:var(--c-gold);">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="liquid-glass" style="padding:16px 20px;margin-bottom:10px;">
+      <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;" data-i18n="warningTitle">Чек-лист</div>
+      <div style="display:flex;gap:8px;">
+        <div class="glass2" style="flex:1;padding:11px;display:flex;align-items:center;gap:9px;"><span style="font-size:20px;">🙈</span><div style="font-size:11px;color:var(--c-muted);line-height:1.5;" data-i18n="warningChat">Скрой чат и уведомления</div></div>
+        <div class="glass2" style="flex:1;padding:11px;display:flex;align-items:center;gap:9px;"><span style="font-size:20px;">🎤</span><div style="font-size:11px;color:var(--c-muted);line-height:1.5;" data-i18n="warningViewers">Зрители — не подсказывать!</div></div>
+      </div>
+    </div>
+    <div class="liquid-glass" style="padding:16px 20px;margin-bottom:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;" data-i18n="activeModesLabel">Активные режимы</div>
+        <button onclick="app.openSettings()" style="padding:5px 12px;border-radius:9px;background:rgba(139,125,255,0.12);border:1px solid rgba(139,125,255,0.28);cursor:pointer;color:var(--c-accent);font-family:'Clash Display',sans-serif;font-weight:600;font-size:11px;">⚙️ <span data-i18n="settingsBtnInBox">Настройки</span></button>
+      </div>
+      <div id="wp-modes-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:7px;"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+      <div class="glass2" style="padding:12px 14px;display:flex;align-items:center;gap:10px;"><span style="font-size:20px;">👥</span><div><div style="font-size:10px;color:var(--c-muted);font-weight:600;" data-i18n="playersSlider">Игроков</div><div id="wp-players-target" style="font-size:13px;font-weight:700;">20</div></div></div>
+      <div class="glass2" style="padding:12px 14px;display:flex;align-items:center;gap:10px;"><span style="font-size:20px;">⏱</span><div><div style="font-size:10px;color:var(--c-muted);font-weight:600;" data-i18n="timerLabel">Таймер</div><div id="wp-timer-info" style="font-size:12px;font-weight:700;">без таймера</div></div></div>
+    </div>
+  </div>
+  <div id="scene-warning-pre-actions" class="hidden" style="width:100%;max-width:580px;margin-top:2px;">
+    <button onclick="app.proceedToLoading()" class="btn-danger" style="width:100%;padding:17px;font-size:18px;" data-i18n="goBtn">ПОЕХАЛИ! 🚀</button>
+  </div>
+
+  
+
+  
+  <div id="loading-header" class="scene-loading-comp hidden" style="width:100%;max-width:900px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;">
+    <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+      <button onclick="app.goBack()" style="width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <div style="min-width:0;">
+        <div class="font-display" style="font-size:20px;font-weight:700;" data-i18n="waitingTitle">Ожидание чата</div>
+        <div style="font-size:11px;color:var(--c-muted);margin-top:1px;" data-i18n="waitingSubtitle">Зрители, пишите! 👋</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;flex-shrink:0;">
+      <div id="live-badge" style="display:flex;align-items:center;gap:7px;background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.3);border-radius:50px;padding:6px 14px;">
+        <div id="live-dot" style="width:7px;height:7px;border-radius:50%;background:var(--c-red);box-shadow:0 0 8px var(--c-red);flex-shrink:0;"></div>
+        <span id="live-text" style="font-size:12px;color:var(--c-red);font-weight:700;">Offline</span>
+      </div>
+      <div style="position:relative;width:52px;height:52px;">
+        <svg width="52" height="52" viewBox="0 0 100 100" style="transform:rotate(-90deg)">
+          <circle cx="50" cy="50" r="40" stroke="rgba(255,255,255,0.06)" stroke-width="12" fill="none"/>
+          <circle id="progress-ring" cx="50" cy="50" r="40" stroke="url(#pg)" stroke-width="12" fill="none" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="251" style="transition:stroke-dashoffset .4s"/>
+          <defs><linearGradient id="pg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#8b7dff"/><stop offset="100%" stop-color="#ff79df"/></linearGradient></defs>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+          <span id="users-count" class="font-display" style="font-size:15px;font-weight:700;line-height:1;">0</span>
+          <span id="users-target" style="font-size:9px;color:var(--c-muted);">/20</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div id="scene-loading" class="scene hidden" style="max-width:900px;width:100%;">
+    <div style="display:grid;grid-template-columns:1fr 300px;gap:12px;height:420px;">
+
+      
+      <div class="liquid-glass" style="padding:0;overflow:hidden;display:flex;flex-direction:column;">
+        <div id="joined-users-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;padding:14px;overflow-y:auto;flex:1;align-content:start;"></div>
+      </div>
+
+      
+      <div class="liquid-glass" style="padding:0;overflow:hidden;display:flex;flex-direction:column;position:relative;">
+        <div style="padding:12px 14px 9px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:7px;">
+            <span style="font-size:13px;">💬</span>
+            <span style="font-family:'Clash Display',sans-serif;font-weight:600;font-size:13px;">Чат</span>
+          </div>
+          <div style="font-size:9px;color:var(--c-muted);font-weight:600;background:rgba(255,255,255,0.05);padding:3px 8px;border-radius:50px;border:1px solid rgba(255,255,255,0.07);">🫣 наведи чтобы прочесть</div>
+        </div>
+        <div id="chat-messages-list" style="flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:4px;"></div>
+        <button id="chat-scroll-down" onclick="UI.scrollChatDown()" title="К новым сообщениям">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.6" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  
+  <div id="loading-btn-start-wrap" class="scene-loading-comp hidden" style="width:100%;max-width:900px;margin-top:10px;">
+    <button id="btn-start" onclick="app.startCountdown()" disabled class="btn-primary" style="width:100%;padding:16px;font-size:17px;opacity:.4;cursor:not-allowed;" data-i18n="waitingBtn">ОЖИДАНИЕ...</button>
+  </div>
+
+  
+  <div id="loading-btn-early-wrap" class="scene-loading-comp hidden" style="width:100%;max-width:900px;margin-top:8px;">
+    <button id="btn-early-start" onclick="app.startCountdown()" disabled class="btn-ghost" style="width:100%;padding:13px;font-size:14px;opacity:.4;cursor:not-allowed;" data-i18n="earlyStartBtn">НАЧАТЬ ДОСРОЧНО</button>
+  </div>
+
+  <div id="scene-loading-actions" class="hidden" style="width:100%;max-width:900px;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:7px;cursor:pointer;opacity:.7;" onclick="app.openSettings()">
+    <span>⚙️</span><span style="font-size:12px;color:var(--c-muted);font-weight:600;" data-i18n="settingsLink">Настройки</span>
+  </div>
+
+  
+  <div id="scene-countdown" class="hidden" style="position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:rgba(6,6,15,0.86);backdrop-filter:blur(20px);">
+    <div id="countdown-num" style="font-family:'Clash Display',sans-serif;font-weight:700;font-size:210px;background:linear-gradient(135deg,#8b7dff,#ff79df);-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:countdownPop .6s cubic-bezier(0.34,1.56,0.64,1);">3</div>
+  </div>
+
+  
+  <div id="scene-game" class="scene hidden" style="max-width:680px;width:100%;">
+    <div id="game-card" class="liquid-glass" style="padding:32px;margin-bottom:12px;min-height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative;overflow:hidden;">
+      <div id="mode-badge" style="display:inline-block;padding:6px 16px;border-radius:50px;font-family:'Clash Display',sans-serif;font-weight:600;font-size:12px;letter-spacing:.07em;text-transform:uppercase;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);margin-bottom:18px;">...</div>
+      <div id="question-area" style="font-size:21px;font-weight:600;line-height:1.5;width:100%;"></div>
+    </div>
+    <div id="answers-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+  </div>
+
+  
+  <div id="scene-final" class="scene liquid-glass hidden" style="padding:0;position:relative;max-height:78vh;display:flex;flex-direction:column;overflow:hidden;max-width:680px;width:100%;">
+    <div style="padding:18px 24px 12px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;text-align:center;">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,rgba(255,212,112,0.15),rgba(255,121,223,0.1));border:1px solid rgba(255,212,112,0.28);border-radius:50px;padding:6px 18px;margin-bottom:8px;">
+        <span>⭐</span><span style="font-size:11px;color:var(--c-gold);font-weight:700;text-transform:uppercase;letter-spacing:.1em;" data-i18n="finaleRoundBadge">Финальный раунд</span>
+      </div>
+      <div class="font-display" style="font-size:22px;font-weight:700;" data-i18n="finalTitle">Кто что написал?</div>
+      <div style="font-size:12px;color:var(--c-muted);margin-top:4px;" data-i18n="finalSubtitle">Перетяни сообщение к автору</div>
+    </div>
+    <div style="overflow-y:auto;flex:1;padding:16px 22px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div><div style="font-size:11px;font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;" data-i18n="finalMessages">💬 Сообщения</div><div id="final-messages-pool"></div></div>
+        <div><div style="font-size:11px;font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;" data-i18n="finalPlayers">👥 Авторы</div><div id="final-players-list"></div></div>
+      </div>
+    </div>
+  </div>
+  <div id="scene-final-actions" class="hidden" style="width:100%;max-width:680px;margin-top:12px;">
+    <button onclick="app.checkFinalRound()" class="btn-primary" style="width:100%;padding:16px;font-size:16px;" data-i18n="finalCheckBtn">✅ ПРОВЕРИТЬ ОТВЕТЫ</button>
+  </div>
+
+  
+  <div id="scene-result" class="scene liquid-glass hidden" style="padding:0;position:relative;overflow:hidden;max-width:980px;max-height:90vh;display:flex;flex-direction:column;width:100%;">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--c-accent),var(--c-accent2),var(--c-blue));"></div>
+    <div style="display:flex;align-items:center;gap:12px;padding:18px 26px 12px;flex-shrink:0;">
+      <button onclick="app.goHome()" style="width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;" onmouseover="this.style.background='rgba(255,255,255,0.12)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+        <svg width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <div><div style="font-size:10px;font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:.14em;" data-i18n="gameOver">Игра окончена</div><div class="font-display" style="font-size:19px;font-weight:700;" id="result-channel-name"></div></div>
+    </div>
+    <div style="overflow:auto;flex:1;padding:6px 22px 22px;">
+      <div style="display:flex;flex-direction:column;gap:12px;min-width:600px;">
+        <div style="display:grid;grid-template-columns:1.15fr 0.95fr 1.1fr;gap:12px;">
+          <div class="glass2" style="padding:20px;text-align:center;display:flex;flex-direction:column;justify-content:center;">
+            <div id="result-rank-emoji" style="font-size:40px;margin-bottom:2px;">🎯</div>
+            <div id="final-score" class="font-display grad-text" style="font-size:62px;font-weight:700;line-height:1;">0</div>
+            <div style="font-size:10px;color:var(--c-muted);text-transform:uppercase;letter-spacing:.12em;font-weight:700;margin-top:2px;" data-i18n="answerRound">очков</div>
+            <div id="final-msg" style="display:inline-block;margin:10px auto 0;padding:7px 18px;border-radius:50px;font-size:14px;font-weight:700;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);"></div>
+          </div>
+          <div class="glass2" style="padding:16px;display:flex;flex-direction:column;align-items:center;gap:6px;">
+            <div style="font-size:10px;font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:.1em;align-self:flex-start;" data-i18n="correctLabel">Ответы</div>
+            <div style="position:relative;width:124px;height:124px;">
+              <svg width="124" height="124" viewBox="0 0 130 130" style="transform:rotate(-90deg)">
+                <circle cx="65" cy="65" r="52" stroke="rgba(255,255,255,0.05)" stroke-width="15" fill="none"/>
+                <circle id="result-donut-wrong"   cx="65" cy="65" r="52" stroke="var(--c-red)"   stroke-width="15" fill="none" stroke-dasharray="327" stroke-dashoffset="327" style="transition:stroke-dashoffset 1s ease .3s"/>
+                <circle id="result-donut-correct" cx="65" cy="65" r="52" stroke="var(--c-green)" stroke-width="15" fill="none" stroke-linecap="round" stroke-dasharray="327" stroke-dashoffset="327" style="transition:stroke-dashoffset 1s ease .3s"/>
+              </svg>
+              <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;"><span id="result-accuracy" class="font-display" style="font-size:25px;font-weight:700;">0%</span><span style="font-size:9px;color:var(--c-muted);text-transform:uppercase;letter-spacing:.08em;" data-i18n="accuracy">точность</span></div>
+            </div>
+            <div style="display:flex;gap:12px;font-size:11px;">
+              <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;border-radius:3px;background:var(--c-green);display:inline-block;"></span><span id="result-legend-correct" style="color:var(--c-muted);">верно 0</span></span>
+              <span style="display:flex;align-items:center;gap:4px;"><span style="width:9px;height:9px;border-radius:3px;background:var(--c-red);display:inline-block;"></span><span id="result-legend-wrong"   style="color:var(--c-muted);">неверно 0</span></span>
+            </div>
+          </div>
+          <div class="glass2" style="padding:16px;display:flex;flex-direction:column;gap:9px;">
+            <div style="font-size:10px;font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:.1em;" data-i18n="statsTitle">Статистика</div>
+            <div id="final-stats" style="display:flex;flex-direction:column;gap:8px;"></div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="glass2" style="padding:16px;"><div style="font-size:10px;font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;" data-i18n="modeAccuracy">Точность по режимам</div><div id="result-mode-bars" style="display:flex;flex-direction:column;gap:7px;max-height:180px;overflow-y:auto;"></div></div>
+          <div class="glass2" style="padding:16px;" id="result-history-block"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><span style="font-size:10px;font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:.1em;" data-i18n="lastGames">Последние игры</span><span id="result-history-best" style="font-size:11px;color:var(--c-gold);font-weight:700;"></span></div><div id="result-history-chart" style="display:flex;align-items:flex-end;gap:5px;height:96px;"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="scene-result-actions" class="hidden" style="width:100%;max-width:980px;margin-top:12px;">
+    <button onclick="app.playAgain()" class="btn-primary" style="width:100%;padding:17px;font-size:17px;" data-i18n="restartBtn">🔄 НАЧАТЬ ЗАНОВО</button>
+  </div>
+
+  
+
+  
+  <div id="scene-lastcall-checklist" class="scene hidden" style="max-width:760px;width:100%;">
+    <div class="liquid-glass" style="padding:22px 26px;margin-bottom:10px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#65d0ff,var(--c-accent));"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <button onclick="app.backToModeSelect()" style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s;">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <div style="font-size:11px;color:var(--c-muted);font-weight:600;" data-i18n="lcTitle">⏳ Last Call · Последний написавший</div>
+      </div>
+      <div class="font-display" style="font-size:24px;font-weight:700;margin-bottom:8px;" data-i18n="lcHowTitle">Как работает</div>
+      <div style="font-size:13px;color:var(--c-muted);line-height:1.6;margin-bottom:14px;" data-i18n="lcHowDesc">Запускаешь таймер. Чат пишет сообщения. Когда время вышло, побеждает тот, кто написал ПОСЛЕДНИМ. Идеально для розыгрышей и движухи в чате.</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+        <div class="glass2" style="padding:12px;">
+          <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;" data-i18n="lcDuration">Длительность</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-size:11px;color:var(--c-muted);" data-i18n="lcSeconds">Секунд</span>
+            <span id="lc-duration-val" class="font-display" style="font-size:16px;font-weight:700;color:var(--c-accent);">60</span>
+          </div>
+          <input type="range" id="lc-duration-slider" min="1" max="600" value="60" step="1" oninput="document.getElementById('lc-duration-val').innerText=this.value">
+        </div>
+        <div class="glass2" style="padding:12px;">
+          <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;" data-i18n="lcAccess">Кто может участвовать</div>
+          <select id="lc-access" style="width:100%;padding:7px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:var(--c-text);font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12px;outline:none;">
+            <option value="all" data-i18n="accessAll">Все зрители</option>
+            <option value="sub" data-i18n="accessSub">Только сабы</option>
+            <option value="vip" data-i18n="accessVip">VIP / модеры</option>
+            <option value="follower" data-i18n="accessFollower">Фолловеры</option>
+          </select>
+        </div>
+      </div>
+
+      <label class="toggle-wrap glass2 lc-reset-toggle" style="padding:11px;cursor:pointer;margin-bottom:8px;display:flex;position:relative;overflow:hidden;">
+        <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,212,112,0.08),rgba(255,121,223,0.06));pointer-events:none;"></div>
+        <div class="toggle" style="position:relative;z-index:2;"><input type="checkbox" id="lc-reset-on-msg"><div class="toggle-slider"></div></div>
+        <div style="flex:1;position:relative;z-index:2;">
+          <div style="font-size:12px;font-weight:700;display:flex;align-items:center;gap:6px;">
+            <span data-i18n="lcResetMode">⚡ Сбрасывать таймер на каждое сообщение</span>
+            <span style="font-size:9px;background:linear-gradient(135deg,var(--c-gold),var(--c-accent2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-weight:800;letter-spacing:.05em;text-transform:uppercase;">HOT</span>
+          </div>
+          <div style="font-size:10px;color:var(--c-muted);" data-i18n="lcResetModeDesc">Победитель — последний написавший, если за X сек никто не ответил</div>
+        </div>
+      </label>
+      <label class="toggle-wrap glass2" style="padding:11px;cursor:pointer;margin-bottom:8px;display:flex;">
+        <div class="toggle"><input type="checkbox" id="lc-allow-bots" ><div class="toggle-slider"></div></div>
+        <div style="flex:1;">
+          <div style="font-size:12px;font-weight:600;" data-i18n="lcAntiBot">Анти-бот фильтр</div>
+          <div style="font-size:10px;color:var(--c-muted);" data-i18n="lcAntiBotDesc">Игнорировать команды (!), эмоты-only и слишком короткие</div>
+        </div>
+      </label>
+      <label class="toggle-wrap glass2" style="padding:11px;cursor:pointer;margin-bottom:8px;display:flex;">
+        <div class="toggle"><input type="checkbox" id="lc-one-entry"><div class="toggle-slider"></div></div>
+        <div style="flex:1;">
+          <div style="font-size:12px;font-weight:600;" data-i18n="lcOneEntry">1 человек = 1 участие</div>
+          <div style="font-size:10px;color:var(--c-muted);" data-i18n="lcOneEntryDesc">Учитываются только первые сообщения. Защита от спамеров.</div>
+        </div>
+      </label>
+      <label class="toggle-wrap glass2" style="padding:11px;cursor:pointer;margin-bottom:8px;display:flex;">
+        <div class="toggle"><input type="checkbox" id="lc-show-winner" checked><div class="toggle-slider"></div></div>
+        <div style="flex:1;">
+          <div style="font-size:12px;font-weight:600;" data-i18n="lcShowWinner">Показывать топ-5 в финале</div>
+          <div style="font-size:10px;color:var(--c-muted);" data-i18n="lcShowWinnerDesc">Не только победителя, но и финалистов</div>
+        </div>
+      </label>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+        <div class="glass2" style="padding:9px 11px;">
+          <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;" data-i18n="lcMinLen">Мин. длина сообщения</div>
+          <input type="number" id="lc-min-len" value="3" min="1" max="50" style="width:100%;padding:5px 8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--c-text);font-family:'Space Grotesk',sans-serif;font-size:13px;outline:none;">
+        </div>
+        <div class="glass2" style="padding:9px 11px;">
+          <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;" data-i18n="lcCooldown">Прогрев перед стартом (сек)</div>
+          <input type="number" id="lc-cooldown" value="0" min="0" max="60" style="width:100%;padding:5px 8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--c-text);font-family:'Space Grotesk',sans-serif;font-size:13px;outline:none;">
+        </div>
+      </div>
+
+      <div class="glass2" style="padding:9px 11px;">
+        <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;" data-i18n="lcKeyword">Ключевое слово (опционально)</div>
+        <input type="text" id="lc-keyword" placeholder="например: пицца" style="width:100%;padding:5px 9px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--c-text);font-family:'Space Grotesk',sans-serif;font-size:13px;outline:none;">
+        <div style="font-size:9px;color:var(--c-muted);margin-top:4px;" data-i18n="lcKeywordDesc">Только сообщения с этим словом учитываются</div>
+      </div>
+    </div>
+
+    <div class="liquid-glass" style="padding:14px 18px;">
+      <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;" data-i18n="warningTitle">Чек-лист</div>
+      <div style="display:flex;gap:8px;">
+        <div class="glass2" style="flex:1;padding:11px;display:flex;align-items:center;gap:9px;"><span style="font-size:20px;">📣</span><div style="font-size:11px;color:var(--c-muted);line-height:1.5;" data-i18n="lcAnnounce">Объяви условия зрителям</div></div>
+        <div class="glass2" style="flex:1;padding:11px;display:flex;align-items:center;gap:9px;"><span style="font-size:20px;">🎁</span><div style="font-size:11px;color:var(--c-muted);line-height:1.5;" data-i18n="lcPrize">Что разыгрывается?</div></div>
+      </div>
+    </div>
+  </div>
+  <div id="scene-lastcall-checklist-actions" class="hidden" style="width:100%;max-width:760px;margin-top:10px;">
+    <button onclick="LastCall.start()" class="btn-primary" style="width:100%;padding:17px;font-size:18px;" data-i18n="lcStartBtn">🚀 ЗАПУСТИТЬ ТАЙМЕР</button>
+  </div>
+
+  
+  <div id="scene-lastcall-game" class="scene hidden" style="max-width:860px;width:100%;">
+    <div class="split-2col" style="display:grid;grid-template-columns:1fr 320px;gap:14px;">
+      <div class="liquid-glass" style="padding:30px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:380px;position:relative;overflow:hidden;">
+        <div id="lc-reset-badge" style="display:none;align-items:center;gap:6px;padding:5px 13px;border-radius:50px;background:linear-gradient(135deg,rgba(255,212,112,0.18),rgba(255,121,223,0.14));border:1px solid rgba(255,212,112,0.4);font-family:'Clash Display',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:14px;position:absolute;top:18px;left:50%;transform:translateX(-50%);">
+          <span style="font-size:13px;">⚡</span><span data-i18n="lcResetBadge">RESET MODE</span>
+        </div>
+        <div id="lc-ring-wrap" style="position:relative;width:240px;height:240px;margin-bottom:18px;">
+          <svg width="240" height="240" viewBox="0 0 240 240" style="transform:rotate(-90deg);">
+            <circle cx="120" cy="120" r="108" stroke="rgba(255,255,255,0.06)" stroke-width="14" fill="none"/>
+            <circle id="lc-ring" cx="120" cy="120" r="108" stroke="url(#lc-grad)" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="678.58" stroke-dashoffset="0" style="transition:stroke-dashoffset 1s linear;"/>
+            <defs>
+              <linearGradient id="lc-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#65d0ff"/>
+                <stop offset="100%" stop-color="#8b7dff"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+            <span id="lc-time" class="font-display grad-text" style="font-size:74px;font-weight:700;line-height:1;">60</span>
+            <span style="font-size:11px;color:var(--c-muted);text-transform:uppercase;letter-spacing:.14em;font-weight:700;margin-top:4px;" data-i18n="lcSecLeft">осталось</span>
+          </div>
+        </div>
+        <div id="lc-status" class="font-display" style="font-size:17px;font-weight:600;color:var(--c-muted);" data-i18n="lcRunning">Чат пишет... 👀</div>
+        <div style="display:flex;gap:8px;margin-top:18px;">
+          <button id="lc-stop-btn" onclick="LastCall.stopEarly()" class="btn-ghost" style="padding:10px 20px;font-size:13px;" data-i18n="lcStopEarly">⏹ Остановить досрочно</button>
+        </div>
+      </div>
+      <div class="liquid-glass" style="padding:0;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:7px;"><span style="font-size:13px;">💬</span><span style="font-family:'Clash Display',sans-serif;font-weight:600;font-size:13px;" data-i18n="lcRecentMsgs">Последние</span></div>
+          <div id="lc-msg-count" style="font-size:10px;color:var(--c-muted);font-weight:600;background:rgba(255,255,255,0.05);padding:3px 9px;border-radius:50px;">0</div>
+        </div>
+        <div id="lc-msg-list" style="flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column-reverse;gap:5px;max-height:380px;"></div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div id="scene-lastcall-result" class="scene liquid-glass hidden" style="padding:0;position:relative;overflow:hidden;max-width:680px;width:100%;">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#65d0ff,var(--c-accent2));"></div>
+    <div style="display:flex;align-items:center;gap:12px;padding:18px 26px 12px;">
+      <button onclick="LastCall.goHome()" style="width:36px;height:36px;border-radius:11px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <div><div style="font-size:10px;font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:.14em;" data-i18n="lcEndTitle">Last Call · Финал</div><div class="font-display" style="font-size:19px;font-weight:700;" data-i18n="lcWinnerTitle">И победитель...</div></div>
+    </div>
+    <div style="padding:6px 26px 26px;">
+      <div id="lc-winner-box" style="background:linear-gradient(135deg,rgba(101,208,255,0.16),rgba(139,125,255,0.12));border:1px solid rgba(101,208,255,0.4);border-radius:18px;padding:24px 22px;text-align:center;margin-bottom:14px;position:relative;overflow:hidden;">
+        <div style="font-size:36px;margin-bottom:6px;">🏆</div>
+        <div id="lc-winner-name" class="font-display" style="font-size:32px;font-weight:700;background:linear-gradient(135deg,#65d0ff,#8b7dff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">—</div>
+        <div id="lc-winner-msg" class="glass2" style="padding:12px 16px;margin-top:10px;font-size:14px;text-align:left;">—</div>
+        <div id="lc-winner-meta" style="font-size:11px;color:var(--c-muted);margin-top:8px;">—</div>
+      </div>
+      <div id="lc-top5" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <button onclick="LastCall.restart()" class="btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:14px;" data-i18n="lcAgain">🔄 ЕЩЁ РАЗ</button>
+    </div>
+  </div>
+
+  
+
+  
+  <div id="scene-roast-checklist" class="scene hidden" style="max-width:980px;width:100%;">
+    <div class="liquid-glass roast-dash" style="padding:22px 26px;margin-bottom:10px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#ff79df,var(--c-gold));"></div>
+      <div class="roast-dash-full" style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <button onclick="app.backToModeSelect()" style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <div style="font-size:11px;color:var(--c-muted);font-weight:600;" data-i18n="roastTitle">🔮 Chat Roast AI · Психоанализ чата</div>
+      </div>
+      <div class="font-display roast-dash-full" style="font-size:22px;font-weight:700;margin-bottom:8px;" data-i18n="roastHowTitle">Как работает</div>
+      <div class="roast-dash-full" style="font-size:13px;color:var(--c-muted);line-height:1.6;margin-bottom:14px;" data-i18n="roastHowDesc">1) Сообщения чата собираются непрерывно с момента подключения. 2) Когда готов — жми «Анализировать». AI прочитает весь чат за стрим. 3) AI навешивает на юзеров характеристики: душнила, красавчик, философ. Угадай по описанию.</div>
+
+      
+      <div class="glass2" style="padding:12px 14px;margin-bottom:10px;background:linear-gradient(135deg,rgba(255,121,223,0.06),rgba(139,125,255,0.04));border-color:rgba(255,121,223,0.2);">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;display:flex;align-items:center;gap:6px;">
+            <span class="roast-live-dot"></span><span data-i18n="roastLiveCollect">Собираем чат с момента подключения</span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+          <div style="text-align:center;">
+            <div id="roast-cl-msgs" class="font-display grad-text" style="font-size:24px;font-weight:700;line-height:1;">0</div>
+            <div style="font-size:9px;color:var(--c-muted);text-transform:uppercase;letter-spacing:.07em;margin-top:3px;" data-i18n="roastMsgsCount">Сообщений</div>
+          </div>
+          <div style="text-align:center;">
+            <div id="roast-cl-users" class="font-display" style="font-size:24px;font-weight:700;line-height:1;color:var(--c-accent2);">0</div>
+            <div style="font-size:9px;color:var(--c-muted);text-transform:uppercase;letter-spacing:.07em;margin-top:3px;" data-i18n="roastUsersCount">Юзеров</div>
+          </div>
+          <div style="text-align:center;">
+            <div id="roast-cl-time" class="font-display" style="font-size:24px;font-weight:700;line-height:1;color:var(--c-accent);">0:00</div>
+            <div style="font-size:9px;color:var(--c-muted);text-transform:uppercase;letter-spacing:.07em;margin-top:3px;" data-i18n="roastCollectedFor">Собирается</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass2" style="padding:12px;margin-bottom:10px;">
+        <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;" data-i18n="roastCategories">Характеристики (что угадывать)</div>
+        <div id="roast-cat-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"></div>
+
+        
+        <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07);">
+          <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:flex;align-items:center;gap:6px;"><span>✏️</span><span data-i18n="roastCustomCats">Свои характеристики</span></div>
+          <div id="roast-custom-cats-list" style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px;"></div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input type="text" id="roast-cc-emoji" maxlength="2" placeholder="😎" style="width:42px;text-align:center;padding:8px 4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--c-text);font-size:15px;outline:none;flex-shrink:0;">
+            <input type="text" id="roast-cc-label" maxlength="24" placeholder="Напр.: Главный батя" data-i18n-ph="roastCcLabelPh" style="flex:1;min-width:0;padding:8px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--c-text);font-family:'Space Grotesk',sans-serif;font-size:12px;outline:none;">
+            <button onclick="Roast.addCustomCat()" class="btn-ghost" style="padding:8px 14px;font-size:13px;flex-shrink:0;" data-i18n="roastCcAdd">+ Добавить</button>
+          </div>
+          <input type="text" id="roast-cc-desc" maxlength="90" placeholder="Что ищет AI: кто ведёт себя по-отечески, поучает чат..." data-i18n-ph="roastCcDescPh" style="width:100%;margin-top:6px;padding:8px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--c-text);font-family:'Space Grotesk',sans-serif;font-size:11px;outline:none;">
+          <div style="font-size:9px;color:var(--c-muted);margin-top:4px;opacity:.7;" data-i18n="roastCcHint">Своя характеристика лучше всего работает с AI-провайдером. В локальном режиме игрок подбирается приблизительно.</div>
+        </div>
+      </div>
+
+      <div class="glass2" style="padding:12px;margin-bottom:10px;">
+        <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;" data-i18n="roastTuning">⚙️ Тонкая настройка</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div>
+            <div style="font-size:10px;color:var(--c-muted);font-weight:600;margin-bottom:4px;" data-i18n="roastRounds">Раундов в игре</div>
+            <select id="roast-rounds" style="width:100%;padding:6px 8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--c-text);font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;outline:none;">
+              <option value="3">3</option><option value="4">4</option><option value="5">5</option>
+              <option value="6" selected>6</option><option value="8">8</option><option value="10">10</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--c-muted);font-weight:600;margin-bottom:4px;" data-i18n="roastAnswerCount">Кнопок-ответов</div>
+            <select id="roast-answer-count" style="width:100%;padding:6px 8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--c-text);font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;outline:none;">
+              <option value="2">2 (легко)</option>
+              <option value="4" selected>4</option>
+              <option value="6">6 (сложно)</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--c-muted);font-weight:600;margin-bottom:4px;" data-i18n="roastDifficulty">Сложность цитат</div>
+            <select id="roast-difficulty" style="width:100%;padding:6px 8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--c-text);font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;outline:none;">
+              <option value="easy">🟢 Легко</option>
+              <option value="normal" selected>🟡 Норм</option>
+              <option value="hard">🔴 Сложно</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:10px;color:var(--c-muted);font-weight:600;margin-bottom:4px;" data-i18n="roastTone">Тон AI</div>
+            <select id="roast-tone" style="width:100%;padding:6px 8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--c-text);font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;outline:none;">
+              <option value="playful" selected>😏 Шуточно</option>
+              <option value="spicy">🌶️ Остро</option>
+              <option value="wholesome">🥰 Тепло</option>
+            </select>
+          </div>
+          <div style="grid-column:1/-1;">
+            <div style="font-size:10px;color:var(--c-muted);font-weight:600;margin-bottom:4px;" data-i18n="roastLanguage">Язык анализа</div>
+            <select id="roast-language" style="width:100%;padding:6px 8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--c-text);font-family:'Space Grotesk',sans-serif;font-size:12px;font-weight:600;outline:none;">
+              <option value="auto" selected>🌐 Авто (по чату)</option>
+              <option value="ru">🇷🇺 Русский</option>
+              <option value="en">🇬🇧 English</option>
+              <option value="uk">🇺🇦 Українська</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass2" style="padding:12px;margin-bottom:10px;">
+        <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+          <span data-i18n="roastCustomPrompt">Кастомные инструкции для AI</span>
+          <span style="font-size:9px;color:var(--c-muted);font-weight:600;text-transform:none;letter-spacing:0;opacity:.7;" data-i18n="roastCustomOptional">(необязательно)</span>
+        </div>
+        <textarea id="roast-custom-prompt" rows="2" placeholder="Например: учитывай что Vasya — лучший друг стримера, на него можно жёстко" style="width:100%;padding:8px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:var(--c-text);font-family:'Space Grotesk',sans-serif;font-size:12px;outline:none;resize:vertical;line-height:1.4;"></textarea>
+      </div>
+
+      
+      <div class="glass2" style="padding:12px;margin-bottom:10px;">
+        <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+          <span data-i18n="roastProvider">🧠 AI-провайдер</span>
+        </div>
+        <div id="roast-provider-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
+          <button type="button" class="roast-prov-btn roast-prov-active" data-prov="local" onclick="Roast.selectProvider('local')">
+            <span class="roast-prov-icon">🪶</span>
+            <span class="roast-prov-name">Local</span>
+            <span class="roast-prov-tag" data-i18n="roastProvFree">бесплатно</span>
+          </button>
+          <button type="button" class="roast-prov-btn" data-prov="anthropic" onclick="Roast.selectProvider('anthropic')">
+            <span class="roast-prov-icon">🟧</span>
+            <span class="roast-prov-name">Claude</span>
+            <span class="roast-prov-tag">Anthropic</span>
+          </button>
+          <button type="button" class="roast-prov-btn" data-prov="openai" onclick="Roast.selectProvider('openai')">
+            <span class="roast-prov-icon">⚫</span>
+            <span class="roast-prov-name">ChatGPT</span>
+            <span class="roast-prov-tag">OpenAI</span>
+          </button>
+          <button type="button" class="roast-prov-btn" data-prov="xai" onclick="Roast.selectProvider('xai')">
+            <span class="roast-prov-icon">⚡</span>
+            <span class="roast-prov-name">Grok</span>
+            <span class="roast-prov-tag">xAI</span>
+          </button>
+          <button type="button" class="roast-prov-btn" data-prov="deepseek" onclick="Roast.selectProvider('deepseek')">
+            <span class="roast-prov-icon">🐋</span>
+            <span class="roast-prov-name">DeepSeek</span>
+            <span class="roast-prov-tag">cheap</span>
+          </button>
+          <button type="button" class="roast-prov-btn" data-prov="custom" onclick="Roast.selectProvider('custom')">
+            <span class="roast-prov-icon">🔧</span>
+            <span class="roast-prov-name">Custom</span>
+            <span class="roast-prov-tag" data-i18n="roastProvCustom">свой</span>
+          </button>
+        </div>
+
+        
+        <div id="roast-prov-info-local" class="roast-prov-info">
+          <div style="font-size:11px;color:var(--c-muted);line-height:1.5;background:rgba(82,255,182,0.05);border:1px solid rgba(82,255,182,0.2);border-radius:9px;padding:9px 12px;">
+            <div style="font-weight:700;color:var(--c-green);margin-bottom:4px;display:flex;align-items:center;gap:5px;"><span>🪶</span><span data-i18n="roastLocalTitle">Локальный анализ (без LLM)</span></div>
+            <span data-i18n="roastLocalDesc">Бесплатно, мгновенно, оффлайн. Использует умные эвристики (длина сообщений, эмоут-плотность, упоминания стримера, тон). Менее «творческий» чем настоящий AI, но забавный.</span>
+          </div>
+        </div>
+
+        
+        <div id="roast-prov-info-anthropic" class="roast-prov-info" style="display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-size:10px;color:var(--c-muted);font-weight:600;" data-i18n="roastApiKey">API Key</span>
+            <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer" style="color:var(--c-accent);text-decoration:none;font-weight:600;font-size:10px;" data-i18n="roastGetKey">Получить →</a>
+          </div>
+          <input type="password" id="roast-key-anthropic" placeholder="sk-ant-..." class="roast-key-input">
+          <div style="margin-top:6px;display:flex;gap:6px;align-items:center;">
+            <span style="font-size:10px;color:var(--c-muted);font-weight:600;" data-i18n="roastModel">Модель</span>
+            <select id="roast-model-anthropic" class="roast-model-select">
+              <option value="claude-sonnet-4-5">Claude Sonnet 4.5</option>
+              <option value="claude-opus-4-5">Claude Opus 4.5</option>
+              <option value="claude-haiku-4-5">Claude Haiku 4.5</option>
+            </select>
+          </div>
+        </div>
+
+        
+        <div id="roast-prov-info-openai" class="roast-prov-info" style="display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-size:10px;color:var(--c-muted);font-weight:600;" data-i18n="roastApiKey">API Key</span>
+            <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" style="color:var(--c-accent);text-decoration:none;font-weight:600;font-size:10px;" data-i18n="roastGetKey">Получить →</a>
+          </div>
+          <input type="password" id="roast-key-openai" placeholder="sk-..." class="roast-key-input">
+          <div style="margin-top:6px;display:flex;gap:6px;align-items:center;">
+            <span style="font-size:10px;color:var(--c-muted);font-weight:600;" data-i18n="roastModel">Модель</span>
+            <select id="roast-model-openai" class="roast-model-select">
+              <option value="gpt-4o-mini">GPT-4o mini (дёшево)</option>
+              <option value="gpt-4o">GPT-4o</option>
+              <option value="gpt-4.1">GPT-4.1</option>
+            </select>
+          </div>
+        </div>
+
+        
+        <div id="roast-prov-info-xai" class="roast-prov-info" style="display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-size:10px;color:var(--c-muted);font-weight:600;" data-i18n="roastApiKey">API Key</span>
+            <a href="https://console.x.ai/" target="_blank" rel="noopener noreferrer" style="color:var(--c-accent);text-decoration:none;font-weight:600;font-size:10px;" data-i18n="roastGetKey">Получить →</a>
+          </div>
+          <input type="password" id="roast-key-xai" placeholder="xai-..." class="roast-key-input">
+          <div style="margin-top:6px;display:flex;gap:6px;align-items:center;">
+            <span style="font-size:10px;color:var(--c-muted);font-weight:600;" data-i18n="roastModel">Модель</span>
+            <select id="roast-model-xai" class="roast-model-select">
+              <option value="grok-2-latest">Grok 2</option>
+              <option value="grok-beta">Grok Beta</option>
+            </select>
+          </div>
+        </div>
+
+        
+        <div id="roast-prov-info-deepseek" class="roast-prov-info" style="display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-size:10px;color:var(--c-muted);font-weight:600;" data-i18n="roastApiKey">API Key</span>
+            <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener noreferrer" style="color:var(--c-accent);text-decoration:none;font-weight:600;font-size:10px;" data-i18n="roastGetKey">Получить →</a>
+          </div>
+          <input type="password" id="roast-key-deepseek" placeholder="sk-..." class="roast-key-input">
+          <div style="margin-top:6px;display:flex;gap:6px;align-items:center;">
+            <span style="font-size:10px;color:var(--c-muted);font-weight:600;" data-i18n="roastModel">Модель</span>
+            <select id="roast-model-deepseek" class="roast-model-select">
+              <option value="deepseek-chat">DeepSeek Chat</option>
+              <option value="deepseek-reasoner">DeepSeek Reasoner</option>
+            </select>
+          </div>
+        </div>
+
+        
+        <div id="roast-prov-info-custom" class="roast-prov-info" style="display:none;">
+          <div style="font-size:10px;color:var(--c-muted);margin-bottom:6px;line-height:1.4;" data-i18n="roastCustomDesc">Любой OpenAI-совместимый endpoint (Ollama, LM Studio, Together, OpenRouter и т.д.)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+            <div>
+              <span style="font-size:10px;color:var(--c-muted);font-weight:600;" data-i18n="roastCustomUrl">URL</span>
+              <input type="text" id="roast-key-custom-url" placeholder="https://api.example.com/v1/chat/completions" class="roast-key-input">
+            </div>
+            <div>
+              <span style="font-size:10px;color:var(--c-muted);font-weight:600;" data-i18n="roastCustomModel">Модель</span>
+              <input type="text" id="roast-model-custom" placeholder="llama-3.3-70b" class="roast-key-input">
+            </div>
+            <div style="grid-column:1/-1;">
+              <span style="font-size:10px;color:var(--c-muted);font-weight:600;" data-i18n="roastCustomKey">API Key (опц.)</span>
+              <input type="password" id="roast-key-custom" placeholder="оставь пустым если не нужно" class="roast-key-input">
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size:10px;color:var(--c-muted);margin-top:8px;line-height:1.5;" data-i18n="roastKeyHint">🔒 Ключи хранятся только локально в твоём браузере. Никуда не отправляются кроме выбранного API.</div>
+      </div>
+
+      <div class="glass2 roast-dash-full" style="padding:11px;border:1px solid rgba(255,212,112,0.32);background:rgba(255,212,112,0.06);">
+        <div style="font-size:11px;color:var(--c-gold);font-weight:700;display:flex;align-items:center;gap:6px;"><span>⚠️</span><span data-i18n="roastWarn">Это юмористический режим — AI может ошибаться и шутить. Не воспринимай результаты всерьёз.</span></div>
+      </div>
+    </div>
+  </div>
+  <div id="scene-roast-checklist-actions" class="hidden" style="width:100%;max-width:980px;margin-top:10px;">
+    <button onclick="Roast.beginAnalysis()" class="btn-primary" style="width:100%;padding:17px;font-size:18px;" data-i18n="roastAnalyzeBtn">🔮 АНАЛИЗИРОВАТЬ ЧАТ СЕЙЧАС</button>
+    <div style="text-align:center;font-size:10px;color:var(--c-muted);margin-top:7px;" data-i18n="roastAnalyzeHint">Можно нажать в любой момент — чат собирается с момента подключения</div>
+  </div>
+
+  
+  <div id="scene-roast-collect" class="scene liquid-glass hidden" style="max-width:680px;width:100%;padding:36px 30px;text-align:center;">
+    <div class="roast-spinner" style="width:48px;height:48px;border-width:5px;margin:0 auto 20px;"></div>
+    <div class="font-display grad-text" style="font-size:24px;font-weight:700;margin-bottom:8px;" data-i18n="roastAnalyzing">AI анализирует чат...</div>
+    <div id="roast-analyzing-sub" style="font-size:13px;color:var(--c-muted);margin-bottom:18px;" data-i18n="roastWait">Это займёт 10-30 секунд</div>
+    <div class="roast-progress-bar"><div class="roast-progress-fill" id="roast-ai-progress" style="width:8%;"></div></div>
+    <div id="roast-analyzing-stats" style="margin-top:14px;font-size:11px;color:var(--c-muted);"></div>
+  </div>
+
+  
+  <div id="scene-roast-game" class="scene hidden" style="max-width:680px;width:100%;">
+    <div id="roast-hud" style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;">
+      <div class="hud-pill"><span style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;" data-i18n="roundLabel">Раунд</span><span id="roast-round-val" class="font-display" style="font-size:18px;font-weight:700;">1/8</span></div>
+      <div class="hud-pill"><span style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;" data-i18n="scoreLabel">Очки</span><span id="roast-score-val" class="font-display grad-text" style="font-size:18px;font-weight:700;">0</span></div>
+    </div>
+    <div id="roast-card" class="liquid-glass" style="padding:28px;margin-bottom:12px;text-align:center;position:relative;overflow:hidden;">
+      <div id="roast-cat-badge" style="display:inline-block;padding:6px 16px;border-radius:50px;font-family:'Clash Display',sans-serif;font-weight:700;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border:1px solid rgba(255,121,223,0.3);background:rgba(255,121,223,0.1);color:var(--c-accent2);margin-bottom:14px;">—</div>
+      <div id="roast-question" style="font-size:18px;font-weight:600;line-height:1.55;color:var(--c-text);margin-bottom:14px;">—</div>
+      <div id="roast-quote" class="glass2" style="padding:14px 18px;font-size:14px;color:var(--c-muted);font-style:italic;line-height:1.5;">—</div>
+    </div>
+    <div id="roast-answers" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+  </div>
+
+  
+  <div id="scene-roast-result" class="scene liquid-glass hidden" style="padding:0;position:relative;overflow:hidden;max-width:780px;width:100%;display:flex;flex-direction:column;max-height:92vh;">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#ff79df,var(--c-gold),var(--c-accent));"></div>
+    <div style="display:flex;align-items:center;gap:12px;padding:18px 26px 12px;">
+      <button onclick="Roast.goHome()" style="width:36px;height:36px;border-radius:11px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <div><div style="font-size:10px;font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:.14em;" data-i18n="roastEnd">Chat Roast · Результаты</div><div class="font-display" style="font-size:19px;font-weight:700;" data-i18n="roastEndSub">Все характеристики</div></div>
+    </div>
+    <div style="padding:6px 26px 26px;overflow-y:auto;">
+      <div class="glass2" style="padding:14px 16px;margin-bottom:14px;">
+        <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;" data-i18n="roastFinalScore">Итог</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
+          <div><div id="roast-final-score" class="font-display grad-text" style="font-size:30px;font-weight:700;">0</div><div style="font-size:10px;color:var(--c-muted);" data-i18n="pointsLabel">очков</div></div>
+          <div><div id="roast-correct" class="font-display" style="font-size:30px;font-weight:700;color:var(--c-green);">0</div><div style="font-size:10px;color:var(--c-muted);" data-i18n="correctLabel">верно</div></div>
+          <div><div id="roast-wrong" class="font-display" style="font-size:30px;font-weight:700;color:var(--c-red);">0</div><div style="font-size:10px;color:var(--c-muted);" data-i18n="wrongLabel">неверно</div></div>
+        </div>
+      </div>
+      <div id="roast-result-cards" style="display:flex;flex-direction:column;gap:8px;"></div>
+      <button onclick="Roast.restart()" class="btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:14px;" data-i18n="restartBtn">🔄 НАЧАТЬ ЗАНОВО</button>
+    </div>
+  </div>
+
+  
+
+  
+  <div id="scene-oracle-checklist" class="scene hidden" style="max-width:780px;width:100%;">
+    <div class="liquid-glass" style="padding:22px 26px;margin-bottom:10px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#52ffb6,#65d0ff,var(--c-accent));"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <button onclick="app.backToModeSelect()" style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <div style="font-size:11px;color:var(--c-muted);font-weight:600;" data-i18n="orTitle">📊 Oracle · Угадай число</div>
+      </div>
+      <div class="font-display" style="font-size:22px;font-weight:700;margin-bottom:8px;" data-i18n="orHowTitle">Как работает</div>
+      <div style="font-size:13px;color:var(--c-muted);line-height:1.6;margin-bottom:14px;" data-i18n="orHowDesc">1) Задаёшь вопрос (можно просто озвучить голосом). 2) Чат пишет свои ответы — число или слово. 3) Побеждает ближайший (число) или первый угадавший (слово). Можно играть несколько раундов — будет общий лидерборд.</div>
+
+      
+      <div class="glass2" style="padding:12px;margin-bottom:10px;">
+        <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;" data-i18n="orAnswerType">Тип ответа</div>
+        <select id="or-answer-type" onchange="Oracle.onTypeChange()" style="width:100%;padding:8px 11px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:var(--c-text);font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:13px;outline:none;">
+          <option value="number" selected data-i18n="orTypeNumber">🔢 Число (ближайший побеждает)</option>
+          <option value="word" data-i18n="orTypeWord">💬 Слово / фраза (первый угадавший)</option>
+        </select>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="glass2" style="padding:12px;">
+          <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;" data-i18n="orDuration">Длительность раунда</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-size:11px;color:var(--c-muted);" data-i18n="lcSeconds">Секунд</span>
+            <span id="or-duration-val" class="font-display" style="font-size:16px;font-weight:700;color:var(--c-accent);">60</span>
+          </div>
+          <input type="range" id="or-duration-slider" min="5" max="600" value="60" step="1" oninput="document.getElementById('or-duration-val').innerText=this.value">
+        </div>
+        <div class="glass2" style="padding:12px;">
+          <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;" data-i18n="orRoundsTotal">Раундов в сессии</div>
+          <select id="or-rounds-total" style="width:100%;padding:7px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:var(--c-text);font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12px;outline:none;">
+            <option value="1">1 (быстрый)</option>
+            <option value="3" selected>3</option>
+            <option value="5">5</option>
+            <option value="7">7</option>
+            <option value="10">10</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+        <div class="glass2" style="padding:12px;">
+          <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;" data-i18n="lcAccess">Кто может участвовать</div>
+          <select id="or-access" style="width:100%;padding:7px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:var(--c-text);font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12px;outline:none;">
+            <option value="all" data-i18n="accessAll">Все зрители</option>
+            <option value="sub" data-i18n="accessSub">Только сабы</option>
+            <option value="vip" data-i18n="accessVip">VIP / модеры</option>
+            <option value="follower" data-i18n="accessFollower">Фолловеры</option>
+          </select>
+        </div>
+        <div class="glass2 or-num-only" style="padding:12px;">
+          <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;" data-i18n="orScoring">Подсчёт</div>
+          <select id="or-scoring" style="width:100%;padding:7px 10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:var(--c-text);font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:12px;outline:none;">
+            <option value="closest" selected data-i18n="orScoringClosest">Ближайший побеждает</option>
+            <option value="exact-only" data-i18n="orScoringExact">Только точное попадание</option>
+          </select>
+        </div>
+      </div>
+
+      <label class="toggle-wrap glass2 or-num-only" style="padding:11px;cursor:pointer;margin-bottom:8px;display:flex;">
+        <div class="toggle"><input type="checkbox" id="or-allow-decimals" checked><div class="toggle-slider"></div></div>
+        <div style="flex:1;"><div style="font-size:12px;font-weight:600;" data-i18n="orAllowDecimals">Принимать дробные числа</div>
+        <div style="font-size:10px;color:var(--c-muted);" data-i18n="orAllowDecimalsDesc">Например 3.14 или 12,5</div></div>
+      </label>
+      <label class="toggle-wrap glass2 or-num-only" style="padding:11px;cursor:pointer;margin-bottom:8px;display:flex;">
+        <div class="toggle"><input type="checkbox" id="or-allow-negative"><div class="toggle-slider"></div></div>
+        <div style="flex:1;"><div style="font-size:12px;font-weight:600;" data-i18n="orAllowNegative">Принимать отрицательные</div>
+        <div style="font-size:10px;color:var(--c-muted);" data-i18n="orAllowNegativeDesc">Можно писать −5, −12.3 и т.д.</div></div>
+      </label>
+      <label class="toggle-wrap glass2" style="padding:11px;cursor:pointer;margin-bottom:8px;display:flex;">
+        <div class="toggle"><input type="checkbox" id="or-first-only" checked><div class="toggle-slider"></div></div>
+        <div style="flex:1;"><div style="font-size:12px;font-weight:600;" data-i18n="orFirstOnly">Учитывать первый ответ от юзера</div>
+        <div style="font-size:10px;color:var(--c-muted);" data-i18n="orFirstOnlyDesc">Иначе — последний (можно менять ставку)</div></div>
+      </label>
+      <label class="toggle-wrap glass2" style="padding:11px;cursor:pointer;display:flex;">
+        <div class="toggle"><input type="checkbox" id="or-postfact"><div class="toggle-slider"></div></div>
+        <div style="flex:1;"><div style="font-size:12px;font-weight:600;" data-i18n="orPostfact">Ответ ввожу постфактум</div>
+        <div style="font-size:10px;color:var(--c-muted);" data-i18n="orPostfactDesc">«Сколько кругов наберу за стрим?» — ответ узнаешь по ходу</div></div>
+      </label>
+    </div>
+  </div>
+  <div id="scene-oracle-checklist-actions" class="hidden" style="width:100%;max-width:780px;margin-top:10px;">
+    <button onclick="Oracle.startSession()" class="btn-primary" style="width:100%;padding:17px;font-size:18px;" data-i18n="orStartSession">📊 НАЧАТЬ СЕССИЮ</button>
+  </div>
+
+  
+  <div id="scene-oracle-question" class="scene liquid-glass hidden" style="max-width:540px;width:100%;padding:26px 28px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <button onclick="Oracle.goHome()" style="width:34px;height:34px;border-radius:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);display:flex;align-items:center;justify-content:center;">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <div style="text-align:right;">
+        <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;" data-i18n="orRoundLabel">Раунд</div>
+        <div id="or-round-info" class="font-display grad-text" style="font-size:18px;font-weight:700;">1 / 3</div>
+      </div>
+    </div>
+    <div class="font-display" style="font-size:24px;font-weight:700;margin-bottom:6px;" data-i18n="orSetupTitle">Подготовь вопрос</div>
+    <div style="font-size:12px;color:var(--c-muted);margin-bottom:16px;" data-i18n="orSetupDesc">Что должен угадать чат?</div>
+
+    <div style="margin-bottom:12px;">
+      <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;display:flex;align-items:center;gap:6px;"><span data-i18n="orQuestion">Вопрос</span><span id="or-q-optional" style="font-size:9px;color:var(--c-muted);font-weight:600;text-transform:none;letter-spacing:0;opacity:.7;" data-i18n="orQuestionOptional">(необязательно — можно озвучить голосом)</span></div>
+      <input type="text" id="or-question-input" placeholder="Например: Сколько кругов я наберу?" style="width:100%;padding:11px 13px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:11px;color:var(--c-text);font-family:'Space Grotesk',sans-serif;font-size:14px;outline:none;">
+    </div>
+    <div id="or-correct-row" style="margin-bottom:14px;">
+      <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;" data-i18n="orCorrect">Правильный ответ</div>
+      <input type="text" id="or-correct-input" placeholder="42" style="width:100%;padding:11px 13px;background:rgba(82,255,182,0.05);border:1px solid rgba(82,255,182,0.25);border-radius:11px;color:var(--c-green);font-family:'Clash Display',sans-serif;font-weight:700;font-size:18px;outline:none;text-align:center;">
+      <div style="display:flex;align-items:flex-start;gap:7px;margin-top:8px;padding:8px 11px;background:rgba(255,212,112,0.07);border:1px solid rgba(255,212,112,0.25);border-radius:9px;">
+        <span style="font-size:14px;flex-shrink:0;">⚠️</span>
+        <span style="font-size:10px;color:var(--c-gold);line-height:1.4;" data-i18n="orCorrectHint">Этот ответ виден на экране! Перед запуском закрой эту область картинкой/сценой в OBS, чтобы чат не подсмотрел.</span>
+      </div>
+    </div>
+
+    <button onclick="Oracle.startRound()" class="btn-primary" style="width:100%;padding:14px;font-size:15px;" data-i18n="orStartRoundBtn">▶ ЗАПУСТИТЬ РАУНД</button>
+  </div>
+
+  
+  <div id="scene-oracle-game" class="scene hidden" style="max-width:880px;width:100%;">
+    <div class="liquid-glass" style="padding:18px 22px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:14px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;" data-i18n="orQuestion">Вопрос</div>
+        <div id="or-game-question" class="font-display" style="font-size:18px;font-weight:700;line-height:1.3;margin-top:2px;">—</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;" data-i18n="orRoundLabel">Раунд</div>
+        <div id="or-game-round" class="font-display grad-text" style="font-size:18px;font-weight:700;">1/3</div>
+      </div>
+    </div>
+    <div class="split-2col" style="display:grid;grid-template-columns:1fr 320px;gap:14px;">
+      <div class="liquid-glass" style="padding:30px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:340px;position:relative;overflow:hidden;">
+        <div style="position:relative;width:240px;height:240px;margin-bottom:16px;">
+          <svg width="240" height="240" viewBox="0 0 240 240" style="transform:rotate(-90deg);">
+            <circle cx="120" cy="120" r="108" stroke="rgba(255,255,255,0.06)" stroke-width="14" fill="none"/>
+            <circle id="or-game-ring" cx="120" cy="120" r="108" stroke="url(#or-game-grad)" stroke-width="14" fill="none" stroke-linecap="round" stroke-dasharray="678.58" stroke-dashoffset="0" style="transition:stroke-dashoffset 1s linear;"/>
+            <defs>
+              <linearGradient id="or-game-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#52ffb6"/>
+                <stop offset="100%" stop-color="#65d0ff"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+            <span id="or-game-time" class="font-display grad-text" style="font-size:74px;font-weight:700;line-height:1;">60</span>
+            <span style="font-size:11px;color:var(--c-muted);text-transform:uppercase;letter-spacing:.14em;font-weight:700;margin-top:4px;" data-i18n="lcSecLeft">осталось</span>
+          </div>
+        </div>
+        <div id="or-game-running-label" class="font-display" style="font-size:14px;font-weight:600;color:var(--c-muted);" data-i18n="orGameRunning">Чат пишет числа... 📊</div>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button onclick="Oracle.stopRoundEarly()" class="btn-ghost" style="padding:9px 18px;font-size:12px;" data-i18n="orStopEarly">⏹ Остановить раунд</button>
+        </div>
+      </div>
+      <div class="liquid-glass" style="padding:0;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:7px;"><span style="font-size:13px;">🔢</span><span style="font-family:'Clash Display',sans-serif;font-weight:600;font-size:13px;" data-i18n="orFeed">Ставки</span></div>
+          <div id="or-game-count" style="font-size:10px;color:var(--c-muted);font-weight:600;background:rgba(255,255,255,0.05);padding:3px 9px;border-radius:50px;">0</div>
+        </div>
+        <div id="or-game-feed" style="flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column-reverse;gap:5px;max-height:340px;"></div>
+      </div>
+    </div>
+  </div>
+
+  
+  <div id="scene-oracle-postfact" class="scene liquid-glass hidden" style="max-width:520px;width:100%;padding:28px 30px;text-align:center;">
+    <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.14em;margin-bottom:6px;" data-i18n="orPostfactTitle">Раунд завершён</div>
+    <div class="font-display grad-text" style="font-size:26px;font-weight:700;margin-bottom:14px;" data-i18n="orPostfactAsk">Какой правильный ответ?</div>
+    <div class="glass2" style="padding:13px 16px;margin-bottom:14px;font-size:14px;line-height:1.4;"><span style="color:var(--c-muted);">«</span><span id="or-pf-question">—</span><span style="color:var(--c-muted);">»</span></div>
+    <div style="font-size:11px;color:var(--c-muted);margin-bottom:14px;"><span id="or-pf-count">0</span> <span data-i18n="orPfReceived">ставок собрано</span></div>
+    <input type="text" id="or-pf-correct" placeholder="42" style="width:100%;padding:14px 13px;background:rgba(82,255,182,0.05);border:1px solid rgba(82,255,182,0.25);border-radius:11px;color:var(--c-green);font-family:'Clash Display',sans-serif;font-weight:700;font-size:22px;outline:none;text-align:center;margin-bottom:14px;">
+    <button onclick="Oracle.submitPostfact()" class="btn-primary" style="width:100%;padding:14px;font-size:15px;" data-i18n="orPostfactBtn">📊 ПОКАЗАТЬ РЕЗУЛЬТАТ</button>
+  </div>
+
+  
+  <div id="scene-oracle-result" class="scene liquid-glass hidden" style="padding:0;position:relative;overflow:hidden;max-width:760px;width:100%;display:flex;flex-direction:column;max-height:92vh;">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#52ffb6,#65d0ff,var(--c-accent));"></div>
+    <div style="display:flex;align-items:center;gap:12px;padding:18px 26px 4px;">
+      <button onclick="Oracle.goHome()" style="width:36px;height:36px;border-radius:11px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);display:flex;align-items:center;justify-content:center;">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <div id="or-result-head" style="flex:1;min-width:0;"></div>
+    </div>
+    <div style="padding:6px 26px 26px;overflow-y:auto;">
+      
+      <div class="glass2" style="padding:14px 18px;margin-bottom:12px;text-align:center;background:rgba(82,255,182,0.06);border-color:rgba(82,255,182,0.3);">
+        <div style="font-size:10px;color:var(--c-green);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;" data-i18n="orRightAnswer">Правильный ответ</div>
+        <div id="or-result-correct" class="font-display" style="font-size:36px;font-weight:700;color:var(--c-green);line-height:1;">—</div>
+      </div>
+      
+      <div id="or-winner-box" style="background:linear-gradient(135deg,rgba(82,255,182,0.14),rgba(101,208,255,0.1));border:1px solid rgba(82,255,182,0.35);border-radius:18px;padding:22px 22px;text-align:center;margin-bottom:14px;"></div>
+      
+      <div id="or-dist-wrap" class="glass2" style="padding:14px;margin-bottom:14px;">
+        <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;" data-i18n="orDistribution">Распределение ответов</div>
+        <svg id="or-dist-svg" viewBox="0 0 600 100" style="width:100%;height:auto;display:block;"></svg>
+      </div>
+      
+      <div id="or-result-stats" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px;text-align:center;"></div>
+      
+      <div id="or-result-top" style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px;"></div>
+      <button id="or-next-btn" onclick="Oracle.nextRound()" class="btn-primary" style="width:100%;padding:14px;font-size:15px;">→ СЛЕДУЮЩИЙ РАУНД</button>
+    </div>
+  </div>
+
+  
+  <div id="scene-oracle-leaderboard" class="scene liquid-glass hidden" style="padding:0;position:relative;overflow:hidden;max-width:680px;width:100%;display:flex;flex-direction:column;max-height:92vh;">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#ffd470,#52ffb6,var(--c-accent));"></div>
+    <div style="display:flex;align-items:center;gap:12px;padding:18px 26px 8px;">
+      <button onclick="Oracle.goHome()" style="width:36px;height:36px;border-radius:11px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);display:flex;align-items:center;justify-content:center;">
+        <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--c-muted);text-transform:uppercase;letter-spacing:.14em;" data-i18n="orFinalTitle">Oracle · Финал сессии</div>
+        <div class="font-display" style="font-size:22px;font-weight:700;" data-i18n="orLeaderboard">🏁 Лидерборд</div>
+      </div>
+    </div>
+    <div style="padding:6px 26px 26px;overflow-y:auto;">
+      <div id="or-lb-summary" style="font-size:11px;color:var(--c-muted);margin-bottom:12px;text-align:center;"></div>
+      <div id="or-lb-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <button onclick="Oracle.restart()" class="btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:14px;" data-i18n="restartBtn">🔄 НАЧАТЬ ЗАНОВО</button>
+    </div>
+  </div>
+
+  
+  <div id="scene-roulette" class="scene hidden" style="max-width:1520px;width:100%;position:relative;">
+
+    <div class="rf-topbar">
+      <div class="liquid-glass" style="flex-shrink:0;">
+        <button onclick="Raffle.goHome()" class="rf-iconbtn" title="←">
+          <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+        </button>
+        <button onclick="Raffle.toggleSettings()" class="rf-iconbtn" title="Настройки"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        <button id="rf-btn-sound" onclick="Raffle.toggleSoundBtn()" class="rf-iconbtn" title="Звук вкл/выкл"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></button>
+      </div>
+      <div class="liquid-glass rf-conn-group" style="flex-shrink:0;">
+        <span class="rf-conn"><span id="rf-conn-dot" class="rf-conn-dot off"></span><span id="rf-conn-label" class="rf-conn-label" data-i18n="rfConnOff">Нет связи</span></span>
+        <button onclick="Raffle.toggleConnLog()" class="rf-iconbtn rf-conn-logbtn" title="Лог подключения">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h8"/><path d="M8 9h2"/></svg>
+          <span data-i18n="rfLogBtn">Лог</span>
+        </button>
+      </div>
+      <div class="liquid-glass" style="flex:1;min-width:220px;">
+        <input type="text" id="rf-title" placeholder="Название розыгрыша…" data-i18n-ph="rfTitlePh" oninput="Raffle.setTitle(this.value)" class="rf-title-input" style="background:none;border:none;padding:4px 2px;">
+      </div>
+      <div class="liquid-glass" style="flex-shrink:0;">
+        <span id="rf-join-pre" style="font-size:14px;" data-i18n="rfTypeHint">Пиши</span>
+        <span id="rf-join-word" class="rf-join-word" onclick="Raffle.editJoinWord()" title="Нажми чтобы изменить">!join</span>
+        <span id="rf-join-post" style="font-size:14px;" data-i18n="rfTypeHint2">в чат чтобы участвовать</span>
+      </div>
+      <div class="liquid-glass" style="flex-shrink:0;">
+        <button onclick="Raffle.toggleRules()" class="rf-iconbtn" title="Правила"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg></button>
+        <button onclick="app.openFaq()" class="rf-iconbtn" title="FAQ"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></button>
+        <button onclick="Raffle.toggleHistory()" class="rf-iconbtn" title="История победителей"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg></button>
+      </div>
+    </div>
+
+    <div class="rf-grid">
+      <div class="liquid-glass" style="padding:16px;display:flex;flex-direction:column;gap:10px;height:clamp(510px,70vh,700px);overflow-y:auto;">
+        <div style="font-size:10px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.1em;" data-i18n="rfWinnersFeed">Победители</div>
+        <div id="rf-verify-note" style="display:none;font-size:11px;color:var(--c-gold);background:rgba(255,212,112,0.08);border:1px solid rgba(255,212,112,0.3);border-radius:9px;padding:8px 11px;"></div>
+        <div id="rf-winners-feed" style="display:flex;flex-direction:column;gap:10px;"></div>
+      </div>
+
+      <div class="liquid-glass rf-control-panel" style="padding:20px 16px;display:flex;flex-direction:column;align-items:stretch;gap:12px;height:clamp(510px,70vh,700px);overflow-y:auto;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+          <span id="rf-status-dot" class="rf-status-dot"></span>
+          <span style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.1em;" data-i18n="rfControl">Управление</span>
+        </div>
+        <div class="rf-ctrl-btns">
+          <button id="rf-btn-open" onclick="Raffle.toggleOpen()" class="rf-ctrl-btn rf-ctrl-open">▶ Открыть рафл</button>
+          <button onclick="Raffle.draw(false)" class="rf-ctrl-btn rf-ctrl-draw"><svg class="rf-btn-ico" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg> <span data-i18n="rfDrawBtn">КРУТИТЬ РУЛЕТКУ</span></button>
+          <button onclick="Raffle.reroll()" class="rf-ctrl-btn rf-ctrl-ghost"><svg class="rf-btn-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg> <span data-i18n="rfRerollBtn">Реролл</span></button>
+          <button onclick="Raffle.restartRaffle()" class="rf-ctrl-btn rf-ctrl-ghost rf-ctrl-gold"><svg class="rf-btn-ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-9.36L3 8"/></svg> <span data-i18n="rfRestartBtn">Рестарт рафла</span></button>
+          <button onclick="Raffle.toggleSettings()" class="rf-ctrl-btn rf-ctrl-settings">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span data-i18n="rfSettingsBtn">Настройки</span>
+          </button>
+        </div>
+        <div class="rf-summary-wrap">
+          <div class="rf-summary-title" data-i18n="rfSummaryTitle">Что сейчас в розыгрыше</div>
+          <div id="rf-summary" class="rf-summary"></div>
+        </div>
+      </div>
+
+      <div class="liquid-glass" style="padding:0;display:flex;flex-direction:column;overflow:hidden;height:clamp(510px,70vh,700px);">
+        <div style="padding:11px 12px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:10px;">
+          <span style="font-family:'Clash Display',sans-serif;font-weight:600;font-size:13px;white-space:nowrap;flex-shrink:0;"><span data-i18n="rfEntrants">Участники</span> <span id="rf-entrants-count" class="grad-text">0</span></span>
+          <div id="rf-esearch" class="rf-esearch">
+            <input id="rf-entrants-search" type="text" autocomplete="off" spellcheck="false" oninput="Raffle.searchEntrants(this.value)" onkeydown="if(event.key==='Escape')Raffle.toggleSearch()" data-i18n-ph="rfSearchPh" placeholder="Поиск">
+            <button class="rf-esearch-btn" onclick="Raffle.toggleSearch()" data-i18n-attr="title" data-i18n="rfSearchPh" title="Поиск" aria-label="Поиск">
+              <svg class="rf-ico-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+              <svg class="rf-ico-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </div>
+        <div id="rf-entrants-list" style="flex:1;overflow-y:auto;padding:8px 10px;display:flex;flex-direction:column;gap:4px;"></div>
+      </div>
+    </div>
+
+    <div id="rf-spin-overlay" class="rf-spin-overlay">
+      <div id="rf-spin-window" class="rf-spin-window">
+        <div class="rf-spin-pointer"></div>
+        <div id="rf-spin-track" class="rf-spin-track"></div>
+      </div>
+      <div id="rf-elim-board" class="rf-elim-board" style="display:none;"></div>
+    </div>
+
+    <div id="rf-settings-scrim" onclick="Raffle.toggleSettings()"></div>
+
+    <div id="rf-settings-panel" class="liquid-glass rf-modal" style="display:none;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <div class="font-display grad-text" style="font-size:20px;font-weight:700;" data-i18n="rfSettingsTitle">Настройки рафла</div>
+        <button onclick="Raffle.toggleSettings()" class="rf-iconbtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div class="glass2 rf-set-block">
+        <div class="rf-set-label" data-i18n="rfKeyword">Кодовое слово</div>
+        <input type="text" id="rf-keyword" value="join" class="roast-key-input rf-keyword-big" autocomplete="off" spellcheck="false" onchange="Raffle.readSettings()" placeholder="join">
+        <div class="rf-set-hint" data-i18n="rfKeywordHint">Засчитывается «!слово» и просто «слово» — без учёта регистра</div>
+        <label class="rf-toggle-row" style="margin-top:10px;">
+          <div class="toggle"><input type="checkbox" id="rf-join-any" onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div>
+          <span style="font-size:12px;font-weight:600;" data-i18n="rfJoinAnyMsg">Любое сообщение = участие</span>
+        </label>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:stretch;">
+        <div class="glass2 rf-set-block">
+          <div class="rf-set-label" data-i18n="rfPickMode">Режим розыгрыша</div>
+          <div class="rf-mode-cards">
+            <div class="rf-mode-card selected" data-mode="roulette" onclick="Raffle.setPickMode('roulette')">
+              <span class="rf-mode-card-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span>
+              <span class="rf-mode-card-name" data-i18n="rfPickRoulette">Рулетка</span>
+              <span class="rf-mode-card-desc">CS:GO крутилка</span>
+            </div>
+            <div class="rf-mode-card" data-mode="elimination" onclick="Raffle.setPickMode('elimination')">
+              <span class="rf-mode-card-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/><polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5"/><line x1="5" y1="14" x2="9" y2="18"/><line x1="7" y1="17" x2="4" y2="20"/><line x1="3" y1="19" x2="5" y2="21"/></svg></span>
+              <span class="rf-mode-card-name" data-i18n="rfPickElim">Выбывание</span>
+              <span class="rf-mode-card-desc">Батл-рояль</span>
+            </div>
+            <div class="rf-mode-card" data-mode="instant" onclick="Raffle.setPickMode('instant')">
+              <span class="rf-mode-card-ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
+              <span class="rf-mode-card-name" data-i18n="rfPickInstant">Мгновенно</span>
+              <span class="rf-mode-card-desc">Без анимации</span>
+            </div>
+          </div>
+        </div>
+        <div id="rf-spin-sec-wrap" class="glass2 rf-set-block" style="min-width:120px;">
+          <div class="rf-set-label" data-i18n="rfSpinSec">⏱ Прокрутка</div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+            <span style="font-size:10px;color:var(--c-muted);">сек</span>
+            <span id="rf-spin-sec-val" class="font-display" style="font-size:20px;font-weight:700;color:var(--c-accent);">7с</span>
+          </div>
+          <input type="range" id="rf-spin-sec" min="2" max="100" value="7" step="1" oninput="document.getElementById('rf-spin-sec-val').innerText=this.value+'с'" onchange="Raffle.readSettings()" style="width:100%;">
+          <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--c-muted);margin-top:2px;"><span>2</span><span>100</span></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+        <label class="toggle-wrap glass2 rf-set-block" style="cursor:pointer;"><div class="toggle"><input type="checkbox" id="rf-remove-winner" checked onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span style="font-size:11px;font-weight:600;" data-i18n="rfRemoveWinner">Убирать победителя</span></label>
+        <label class="toggle-wrap glass2 rf-set-block" style="cursor:pointer;"><div class="toggle"><input type="checkbox" id="rf-sound" checked onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span style="font-size:11px;font-weight:600;" data-i18n="rfSound">Звук</span></label>
+        <label class="toggle-wrap glass2 rf-set-block" style="cursor:pointer;"><div class="toggle"><input type="checkbox" id="rf-avatars" checked onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span style="font-size:11px;font-weight:600;" data-i18n="rfAvatars">Аватарки</span></label>
+      </div>
+      <div class="glass2 rf-set-block">
+        <div class="rf-set-label" style="margin-bottom:10px;" data-i18n="rfWhoCanJoin">Кто участвует и бонус-билеты</div>
+        <div class="rf-roles-grid">
+          <div class="rf-role-row"><div class="toggle"><input type="checkbox" id="rf-role-sub" checked onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span data-i18n="rfRoleSub">⭐ Саб</span><input type="number" id="rf-bonus-sub" min="0" max="99" value="0" onchange="Raffle.readSettings()"></div>
+          <div class="rf-role-row"><div class="toggle"><input type="checkbox" id="rf-role-mod" checked onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span data-i18n="rfRoleMod">🛡️ Модер</span><input type="number" id="rf-bonus-mod" min="0" max="99" value="0" onchange="Raffle.readSettings()"></div>
+          <div class="rf-role-row"><div class="toggle"><input type="checkbox" id="rf-role-vip" checked onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span data-i18n="rfRoleVip">💎 VIP</span><input type="number" id="rf-bonus-vip" min="0" max="99" value="0" onchange="Raffle.readSettings()"></div>
+          <div class="rf-role-row"><div class="toggle"><input type="checkbox" id="rf-role-firstTimer" checked onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span data-i18n="rfRoleFirst">🌱 Новичок (4ч)</span><input type="number" id="rf-bonus-firstTimer" min="0" max="99" value="0" onchange="Raffle.readSettings()"></div>
+        </div>
+        <div class="rf-set-hint" style="margin-top:8px;" data-i18n="rfRolesHint">Новичок = первое сообщение за последние 4 часа. Бонус — доп. билеты к базовому 1.</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+        <label class="toggle-wrap glass2 rf-set-block" style="cursor:pointer;"><div class="toggle"><input type="checkbox" id="rf-require-follow" onchange="Raffle.readSettings()"><div class="toggle-slider"></div></div><span style="font-size:11px;font-weight:600;" data-i18n="rfRequireFollow">Только фолловеры</span></label>
+        <div class="glass2 rf-set-block">
+          <div class="rf-set-label" style="margin-bottom:6px;" data-i18n="rfMinFollowDays">Мин. фоллов (дней)</div>
+          <input type="number" id="rf-min-follow-days" min="0" max="3650" placeholder="0" class="roast-key-input" style="padding:8px 10px;width:100%;box-sizing:border-box;" onchange="Raffle.readSettings()">
+        </div>
+        <div class="glass2 rf-set-block">
+          <div class="rf-set-label" style="margin-bottom:6px;" data-i18n="rfMinMsgs">Мин. сообщений</div>
+          <input type="number" id="rf-min-msgs" min="0" max="999" placeholder="0" class="roast-key-input" style="padding:8px 10px;width:100%;box-sizing:border-box;" onchange="Raffle.readSettings()">
+        </div>
+      </div>
+      <div class="rf-set-hint" data-i18n="rfFollowHint">Фоллов проверяется при выпадении победителя — если не проходит, появится подсказка рерольнуть.</div>
+    </div>
+
+    <div id="rf-history-panel" class="liquid-glass rf-modal" style="display:none;flex-direction:column;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div class="font-display grad-text" style="font-size:19px;font-weight:700;" data-i18n="rfHistoryTitle">История победителей</div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="Raffle.clearHistory()" class="btn-ghost" style="padding:7px 12px;font-size:11px;color:var(--c-red);" data-i18n="rfClearHist">Очистить</button>
+          <button onclick="Raffle.toggleHistory()" class="rf-iconbtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+      </div>
+      <div id="rf-history-list" style="display:flex;flex-direction:column;gap:6px;overflow-y:auto;max-height:55vh;"></div>
+    </div>
+
+    <div id="rf-rules-panel" class="liquid-glass rf-modal" style="display:none;flex-direction:column;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div class="font-display grad-text" style="font-size:19px;font-weight:700;" data-i18n="rfRulesTitle">Как пользоваться рулеткой</div>
+        <button onclick="Raffle.toggleRules()" class="rf-iconbtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div data-i18n-html="rfRulesContent"></div>
+    </div>
+
+    <div id="rf-conn-log-panel" class="liquid-glass rf-modal" style="display:none;flex-direction:column;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div class="font-display grad-text" style="font-size:18px;font-weight:700;" data-i18n="rfLogTitle">Лог подключения</div>
+        <button onclick="Raffle.toggleConnLog()" class="rf-iconbtn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+      <div style="font-size:11px;color:var(--c-muted);margin-bottom:10px;" data-i18n="rfLogHint">История подключения к чату Twitch. Регистрация участников не прерывается при сворачивании вкладки или смене сети.</div>
+      <div id="rf-conn-log-list" class="rf-conn-log-list"></div>
+    </div>
+  </div>
+  <div id="scene-songbattle" class="scene hidden" style="max-width:1480px;width:100%;position:relative;">
+    <div id="sb-fx" class="sb-fx" aria-hidden="true">
+      <span class="sb-blob sb-blob-a"></span><span class="sb-blob sb-blob-b"></span><span class="sb-blob sb-blob-c"></span>
+    </div>
+    <canvas id="sb-viz-top" class="sb-viz-edge sb-viz-top" aria-hidden="true"></canvas>
+    <canvas id="sb-viz-bottom" class="sb-viz-edge sb-viz-bottom" aria-hidden="true"></canvas>
+
+    <div class="liquid-glass sb-topbar">
+      <button class="sb-iconbtn sb-exit-red" onclick="app.backToModeSelect()" title="Выйти к режимам"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/><path d="M10 17l-5-5 5-5"/><path d="M15 12H5"/></svg></button>
+      <button id="sb-back-round" class="sb-iconbtn sb-backround hidden" onclick="SongBattle.goBack()" title="Назад к прошлому раунду"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14l-4-4 4-4"/><path d="M5 10h11a4 4 0 0 1 0 8h-1"/></svg></button>
+      <div id="sb-tabbar" class="sb-tabbar hidden">
+        <button id="sb-tab-game-btn" class="sb-tabbtn on" onclick="SongBattle.setTab('game')" data-i18n="sbTabGame">Игра</button>
+        <button id="sb-tab-bracket-btn" class="sb-tabbtn" onclick="SongBattle.setTab('bracket')" data-i18n="sbTabBracket">Сетка</button>
+      </div>
+      <div class="sb-topbar-title">
+        <div class="font-display grad-text sb-topbar-name" data-i18n="msSongSashaTitle">СОНГСАША</div>
+        <div class="sb-topbar-sub" data-i18n="sbTagline">Турнир треков по заявкам из чата</div>
+      </div>
+    </div>
+    <div id="sb-view-lobby">
+      <div id="sb-lobby-wrap" class="sb-lobby-grid">
+        <div class="liquid-glass sb-panel sb-panel-left">
+          <div class="sb-join-card">
+            <div class="sb-join-line"><span data-i18n="sbType">Пиши</span> <span id="sb-join-word" class="sb-join-word">!song</span> <span id="sb-join-tail" data-i18n="sbTypeTail">в чат</span></div>
+            <div class="sb-join-example" id="sb-join-example"></div>
+          </div>
+          <div class="sb-progress">
+            <div class="sb-progress-head"><span id="sb-collected-label" data-i18n="sbCollected">Собрано треков</span><span class="sb-progress-count"><b id="sb-count" class="grad-text">0</b> <span id="sb-target">/ 16</span></span></div>
+            <div class="sb-progress-track"><div id="sb-progress-bar" class="sb-progress-fill"></div></div>
+          </div>
+          <button id="sb-start-btn" class="sb-start-btn" onclick="SongBattle.startBattle()" disabled>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <span class="sb-start-label">Ждём треки…</span>
+          </button>
+          <div class="sb-set-divider"><span class="sb-set-title" data-i18n="sbSettings">Настройки турнира</span></div>
+          <div id="sb-settings" class="sb-settings-inline"></div>
+        </div>
+        <div class="liquid-glass sb-panel sb-panel-right">
+          <div class="sb-list-head"><span id="sb-participants-label" data-i18n="sbParticipants">Участники</span></div>
+          <div id="sb-track-list" class="sb-track-list"></div>
+          <div id="sb-teamsv2-rosters" class="sb-teamsv2-rosters hidden"></div>
+        </div>
+      </div>
+    </div>
+    <div id="sb-stage" class="hidden">
+      <div id="sb-tab-game">
+        <div id="sb-msg-lane-a" class="sb-msg-lane sb-msg-lane-a" aria-hidden="true"></div>
+        <div id="sb-msg-lane-b" class="sb-msg-lane sb-msg-lane-b" aria-hidden="true"></div>
+        <div id="sb-battle-head" class="sb-battle-head"></div>
+        <div id="sb-cards" class="sb-cards"></div>
+        <div id="sb-vote-controls" class="sb-vote-controls"></div>
+      </div>
+      <div id="sb-tab-bracket" class="hidden">
+        <div class="sb-below-grid">
+          <div class="liquid-glass sb-below-panel sb-below-songs-panel">
+            <div class="sb-below-head"><span data-i18n="sbAllSongs">Все треки</span></div>
+            <div id="sb-below-songs" class="sb-below-songs"></div>
+          </div>
+          <div class="liquid-glass sb-below-panel sb-below-bracket-panel">
+            <div class="sb-below-head"><span data-i18n="sbTree">Турнирная сетка</span></div>
+            <div id="sb-below-bracket" class="sb-below-bracket"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="app-footer">
+  <span id="app-footer-label" data-i18n="title">ТВИЧОНЕ</span> · by <a href="https://t.me/rudionee" target="_blank" rel="noopener noreferrer" class="footer-link">Rudionee</a>
+</div>
+
+</div>
+<div id="sb-toasts" class="sb-toasts"></div>
+<div id="sb-channel-modal" class="rf-confirm-overlay" onclick="if(event.target===this)SongBattle.closeChannelSwitch()" style="display:none;">
+  <div class="rf-confirm-box liquid-glass" style="max-width:380px;">
+    <div class="rf-confirm-icon">📺</div>
+    <div class="rf-confirm-title" data-i18n="sbChangeChannelTitle">Сменить канал</div>
+    <div class="rf-confirm-sub" data-i18n="sbChangeChannelSub">Баттл переключится на новый канал. Собранные треки сохранятся.</div>
+    <input type="text" id="sb-channel-input" class="roast-key-input" placeholder="twitch_channel" autocomplete="off" spellcheck="false" style="width:100%;box-sizing:border-box;font-size:15px;text-align:center;font-weight:700;" onkeydown="if(event.key==='Enter')SongBattle.confirmChannelSwitch()">
+    <div class="rf-confirm-btns">
+      <button onclick="SongBattle.closeChannelSwitch()" class="btn-ghost" style="flex:1;padding:13px;font-size:14px;" data-i18n="cancelBtn">Отмена</button>
+      <button onclick="SongBattle.confirmChannelSwitch()" class="btn-primary" style="flex:1;padding:13px;font-size:14px;" data-i18n="sbChangeChannelBtn">Сменить</button>
+    </div>
+  </div>
+</div>
+<div id="sb-kick-modal" class="rf-confirm-overlay" onclick="if(event.target===this)SongBattle.closeKick()" style="display:none;">
+  <div class="rf-confirm-box liquid-glass" style="max-width:400px;">
+    <div class="rf-confirm-icon" style="color:var(--c-red);"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h7"/><path d="M13 2v20"/><path d="m18 9 3 3-3 3"/><path d="M21 12H10"/></svg></div>
+    <div class="rf-confirm-title" data-i18n="sbKickTitle">Исключить зрителя?</div>
+    <div class="rf-confirm-sub"><b id="sb-kick-name" style="color:var(--c-red);"></b> <span data-i18n="sbKickSub">— его треки будут убраны, и он не сможет участвовать в этом турнире. В следующем — снова сможет.</span></div>
+    <div class="rf-confirm-btns">
+      <button onclick="SongBattle.closeKick()" class="btn-ghost" style="flex:1;padding:13px;font-size:14px;" data-i18n="cancelBtn">Отмена</button>
+      <button onclick="SongBattle.confirmKick()" class="btn-primary" style="flex:1;padding:13px;font-size:14px;background:linear-gradient(135deg,#ff6b91,#ff79df);" data-i18n="sbKickBtn">Исключить</button>
+    </div>
+  </div>
+</div>
+
+<div id="rules-modal" class="modal-overlay hidden" onclick="app.closeRules()">
+  <div class="liquid-glass modal-box" style="padding:30px;max-width:440px;width:100%;margin:16px;max-height:88vh;overflow-y:auto;" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;"><div class="font-display grad-text" style="font-size:22px;font-weight:700;" data-i18n="rulesTitle">📖 Как играть</div><button onclick="app.closeRules()" style="width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);font-size:18px;">✕</button></div>
+    <div data-i18n-html="rulesContent"></div>
+    <button class="btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:8px;" onclick="app.closeRules()" data-i18n="understoodBtn">ПОНЯТНО!</button>
+  </div>
+</div>
+
+<div id="faq-modal" class="modal-overlay hidden" onclick="app.closeFaq()">
+  <div class="liquid-glass modal-box" style="padding:30px;max-width:460px;width:100%;margin:16px;max-height:88vh;overflow-y:auto;" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;"><div class="font-display grad-text" style="font-size:22px;font-weight:700;">❓ FAQ</div><button onclick="app.closeFaq()" style="width:32px;height:32px;border-radius:9px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);cursor:pointer;color:var(--c-muted);font-size:18px;">✕</button></div>
+    <div data-i18n-html="faqContent"></div>
+    <button class="btn-primary" style="width:100%;padding:14px;font-size:15px;margin-top:8px;" onclick="app.closeFaq()" data-i18n="closedBtn">ЗАКРЫТЬ</button>
+  </div>
+</div>
+
+<div id="rf-reroll-modal" class="rf-confirm-overlay" onclick="if(event.target===this)Raffle.closeRerollModal()" style="display:none;">
+  <div class="rf-confirm-box liquid-glass">
+    <div class="rf-confirm-icon"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2.1l4 4-4 4"/><path d="M3 12.6v-1a4 4 0 0 1 4-4h12.4"/><path d="M7 21.9l-4-4 4-4"/><path d="M21 11.4v1a4 4 0 0 1-4 4H4.6"/></svg></div>
+    <div class="rf-confirm-title">Реролл</div>
+    <div class="rf-confirm-sub" id="rf-reroll-sub">Выбрать нового победителя?</div>
+    <div class="rf-confirm-btns">
+      <button onclick="Raffle.closeRerollModal()" class="btn-ghost" style="flex:1;padding:13px;font-size:14px;">Отмена</button>
+      <button onclick="Raffle.confirmReroll()" class="btn-primary" style="flex:1;padding:13px;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:7px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>Реролл!</button>
+    </div>
+  </div>
+</div>
+
+<div id="rf-winner-modal" class="rf-wc-overlay" onclick="if(event.target===this)Raffle.closeWinnerCard()" style="display:none;">
+  <div class="rf-wc-box liquid-glass">
+    <div id="rf-winner-modal-body"></div>
+  </div>
+</div>
+
+<div id="rf-channel-modal" class="rf-confirm-overlay" onclick="if(event.target===this)Raffle.closeChannelSwitch()" style="display:none;">
+  <div class="rf-confirm-box liquid-glass" style="max-width:380px;">
+    <div class="rf-confirm-icon"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h7"/><path d="M13 2v20"/><path d="m18 9 3 3-3 3"/><path d="M21 12H10"/></svg></div>
+    <div class="rf-confirm-title" data-i18n="rfChangeChannelTitle">Сменить канал</div>
+    <div class="rf-confirm-sub" data-i18n="rfChangeChannelSub">Розыгрыш переключится на новый канал. Участники текущего розыгрыша сохранятся.</div>
+    <input type="text" id="rf-channel-input" class="roast-key-input" placeholder="twitch_channel" autocomplete="off" spellcheck="false" style="width:100%;box-sizing:border-box;font-size:15px;text-align:center;font-weight:700;" onkeydown="if(event.key==='Enter')Raffle.confirmChannelSwitch()">
+    <div class="rf-confirm-btns">
+      <button onclick="Raffle.closeChannelSwitch()" class="btn-ghost" style="flex:1;padding:13px;font-size:14px;" data-i18n="cancelBtn">Отмена</button>
+      <button onclick="Raffle.confirmChannelSwitch()" class="btn-primary" style="flex:1;padding:13px;font-size:14px;" data-i18n="rfChangeChannelBtn">Сменить</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/core/twitch-auth.js?v=4"></script>
+<script src="js/core/features.js?v=1"></script>
+<script src="js/core/security.js?v=1"></script>
+<script src="js/core/perf.js?v=1"></script>
+<script src="js/core/tmi.js?v=8"></script>
+<script src="js/core/confetti.js?v=2"></script>
+<script src="js/core/sound.js"></script>
+<script src="js/core/storage.js?v=2"></script>
+<script src="js/core/i18n.js?v=21"></script>
+<script src="js/core/emotes.js?v=2"></script>
+<script src="js/core/events.js"></script>
+<script src="js/core/words.js"></script>
+<script src="js/core/media.js"></script>
+<script src="js/core/settings.js?v=2"></script>
+<script src="js/core/ui.js?v=12"></script>
+<script src="js/core/bgfx.js?v=1"></script>
+<script src="js/core/registry.js?v=1"></script>
+<script src="js/core/router.js?v=3"></script>
+<script src="js/modes/modes.js"></script>
+<script src="js/modes/lastcall.js"></script>
+<script src="js/modes/roast.js?v=6"></script>
+<script src="js/modes/oracle.js"></script>
+<script src="js/modes/raffle.js?v=13"></script>
+<script src="https://w.soundcloud.com/player/api.js"></script>
+<script src="js/modes/songbattle.js?v=14"></script>
+<script src="js/core/profile.js?v=5"></script>
+<script src="js/core/app.js?v=16"></script>
+</body>
+</html>

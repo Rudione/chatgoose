@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8b7dff"/>
+      <stop offset="1" stop-color="#ff79df"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="url(#bg)"/>
+  <!-- body -->
+  <ellipse cx="30" cy="42" rx="16" ry="13" fill="#fff"/>
+  <!-- tail -->
+  <path d="M14 40 Q6 38 9 46 Q14 44 17 45 Z" fill="#fff"/>
+  <!-- neck + head -->
+  <path d="M36 44 Q34 24 40 17 Q44 13 48 16 Q51 19 47 23 Q43 27 43 44 Z" fill="#fff"/>
+  <circle cx="45" cy="18" r="7" fill="#fff"/>
+  <!-- eye -->
+  <circle cx="47" cy="16.5" r="2.1" fill="#1a1530"/>
+  <circle cx="47.8" cy="15.8" r="0.7" fill="#fff"/>
+  <!-- beak -->
+  <path d="M51 18 L59 16 L51 22 Z" fill="#ffd470"/>
+  <!-- wing -->
+  <path d="M22 38 Q31 34 38 40 Q31 44 24 43 Z" fill="#e9e6ff"/>
+</svg>
