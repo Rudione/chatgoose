@@ -1060,6 +1060,7 @@ const Raffle = {
         if (this._winnerTimerIv) { clearInterval(this._winnerTimerIv); this._winnerTimerIv = null; }
         this._persist();
         UI.switchScene('mode-select');
+        if (window.Router) Router.go('/modes', { skipGuard: true, silent: true });
     },
 
     _sumIcon(name) {

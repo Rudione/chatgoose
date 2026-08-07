@@ -7,7 +7,6 @@ const Router = {
     SHELL_ALIAS: { modes: '/modes', profile: '/profile', home: '/', login: '/' },
 
     path: '/',
-    depth: 0,
     booting: true,
     _bound: false,
     _guards: [],
@@ -50,16 +49,15 @@ const Router = {
     init() {
         if (this._bound) return;
         this._bound = true;
+        // We never call history.back()/forward() ourselves - every in-app
+        // navigation uses pushState/replaceState directly, so this handler
+        // only has to react to the real browser back/forward buttons and
+        // render whatever hash the user landed on.
         window.addEventListener('popstate', () => {
             const next = this.fromHash();
             if (next === this.path) return;
             if (!this._allowLeave(next)) { this.push(this.path, true); return; }
-            this.depth = Math.max(0, this.depth - 1);
             this.render(next);
-        });
-        window.addEventListener('hashchange', () => {
-            const next = this.fromHash();
-            if (next !== this.path) this.render(next);
         });
     },
 
@@ -74,7 +72,7 @@ const Router = {
         const url = location.pathname + location.search + (path === '/' ? '' : '#' + path);
         try {
             if (replace) history.replaceState({ p: path }, '', url);
-            else { history.pushState({ p: path }, '', url); this.depth++; }
+            else history.pushState({ p: path }, '', url);
         } catch (e) {}
         this.path = path;
     },
@@ -84,18 +82,16 @@ const Router = {
         path = this.normalize(path);
         if (path === this.path && !opts.force) return;
         if (!opts.skipGuard && !this._allowLeave(path)) return;
-        if (!opts.replace && !opts.force && this.depth > 0 && path === this.parentOf(this.path)) {
-            history.back();
-            return;
-        }
         this.push(path, !!opts.replace);
-        this.render(path, { pushed: true });
+        this.render(path, { pushed: true, silent: !!opts.silent });
     },
 
     back() {
-        if (this.depth > 0) { history.back(); return; }
         const parent = this.parentOf(this.path);
-        if (parent) this.go(parent, { replace: true });
+        if (!parent) return;
+        // Replace rather than push: going "back" shouldn't leave a
+        // forward-navigable trace of the screen we just left.
+        this.go(parent, { replace: true });
     },
 
     render(path, opts) {
@@ -104,16 +100,17 @@ const Router = {
         const r = this.resolve(path) || this.resolve('/');
         path = r.path;
 
-        const needsChannel = r.kind === 'mode' ? r.def.needsChannel : r.def.needsChannel;
+        const needsChannel = r.def.needsChannel;
         if (needsChannel && window.app && !app._connectedChannel) {
             this.path = '/';
             this.push('/', true);
-            if (window.app) app.goBack(true);
+            if (!opts.silent && window.app) app.goBack(true);
             return;
         }
 
         this.path = path;
         if (!opts.pushed) this.push(path, true);
+        if (opts.silent) return;
 
         if (r.kind === 'mode') {
             if (window.app) app.selectMode(r.def.id, true);

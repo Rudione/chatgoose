@@ -14,7 +14,7 @@ const Profile = {
         }
         UI.switchScene('profile');
         this.render(acc);
-        if (!fromRouter && window.Router) Router.go('/profile', { skipGuard: true });
+        if (!fromRouter && window.Router) Router.go('/profile', { skipGuard: true, silent: true });
     },
 
     close() {

@@ -515,6 +515,7 @@ const Oracle = {
         Sound.click();
         this.cleanup();
         UI.switchScene('mode-select');
+        if (window.Router) Router.go('/modes', { skipGuard: true, silent: true });
     },
 
     cleanup() {

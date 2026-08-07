@@ -333,7 +333,7 @@ window.app = {
         this.client.connect().catch(e => {
             if (!this._bootSilent) alert(t('errConnecting') + e);
             UI.switchScene('login');
-            if (window.Router) Router.go('/', { replace: true, skipGuard: true });
+            if (window.Router) Router.go('/', { replace: true, skipGuard: true, silent: true });
         });
         this._bindChatEvents();
 
@@ -342,7 +342,7 @@ window.app = {
         if (pm) this.selectMode(pm, true);
         else {
             UI.switchScene('mode-select');
-            if (window.Router) Router.go('/modes', { skipGuard: true });
+            if (window.Router) Router.go('/modes', { skipGuard: true, silent: true });
         }
     },
 
@@ -364,6 +364,36 @@ window.app = {
         if (window.SongBattle) SongBattle.onChannelChanged(ch);
         Sound.click();
         return true;
+    },
+
+    openChannelSwitch() {
+        Sound.click();
+        const m = document.getElementById('ms-channel-modal');
+        if (!m) return;
+        const inp = document.getElementById('ms-channel-input');
+        if (inp) inp.value = this._connectedChannel || '';
+        clearTimeout(this._msChCloseT);
+        this._msChannelOpen = true;
+        m.style.display = 'flex';
+        requestAnimationFrame(() => m.classList.add('show'));
+        setTimeout(() => { if (inp) { inp.focus(); inp.select(); } }, 80);
+    },
+
+    closeChannelSwitch() {
+        this._msChannelOpen = false;
+        const m = document.getElementById('ms-channel-modal');
+        if (!m) return;
+        m.classList.remove('show');
+        clearTimeout(this._msChCloseT);
+        this._msChCloseT = setTimeout(() => { if (!this._msChannelOpen) m.style.display = 'none'; }, 280);
+    },
+
+    confirmChannelSwitch() {
+        const inp = document.getElementById('ms-channel-input');
+        const val = inp ? inp.value : '';
+        const ok = this.changeChannel(val);
+        if (ok) this.closeChannelSwitch();
+        else if (inp) { inp.style.borderColor = 'var(--c-red)'; setTimeout(() => inp.style.borderColor = '', 1200); }
     },
 
     ensureConnected() {
@@ -420,7 +450,7 @@ window.app = {
         if (!fromRouter) Sound.click();
         ModeRegistry.exitAll();
         UI.switchScene('mode-select');
-        if (!fromRouter && window.Router) Router.go('/modes', { skipGuard: true });
+        if (!fromRouter && window.Router) Router.go('/modes', { skipGuard: true, silent: true });
     },
 
     navBack() {
@@ -631,7 +661,7 @@ window.app = {
             if (earlyWrap) earlyWrap.classList.add('hidden');
             if (startWrap) startWrap.classList.add('hidden');
             UI.switchScene('mode-select');
-            if (!fromRouter && window.Router) Router.go('/modes', { skipGuard: true });
+            if (!fromRouter && window.Router) Router.go('/modes', { skipGuard: true, silent: true });
             Sound.click();
             return;
         }
@@ -683,7 +713,7 @@ window.app = {
         if (window.SongBattle) SongBattle.cleanup();
         Storage.clear(Storage.KEYS.session);
         UI.switchScene('login');
-        if (!fromRouter && window.Router) Router.go('/', { skipGuard: true });
+        if (!fromRouter && window.Router) Router.go('/', { skipGuard: true, silent: true });
         Sound.click();
     },
 
@@ -1353,10 +1383,10 @@ window.app = {
         if (window.Roast) Roast.fullReset();
         if (this._connectedChannel) {
             UI.switchScene('mode-select');
-            if (window.Router) Router.go('/modes', { skipGuard: true });
+            if (window.Router) Router.go('/modes', { skipGuard: true, silent: true });
         } else {
             UI.switchScene('login');
-            if (window.Router) Router.go('/', { skipGuard: true });
+            if (window.Router) Router.go('/', { skipGuard: true, silent: true });
         }
     },
 
@@ -1368,7 +1398,7 @@ window.app = {
             this.selectMode('chatgoose');
         } else {
             UI.switchScene('login');
-            if (window.Router) Router.go('/', { skipGuard: true });
+            if (window.Router) Router.go('/', { skipGuard: true, silent: true });
         }
     }
 };

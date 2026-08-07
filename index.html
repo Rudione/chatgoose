@@ -275,9 +275,10 @@
           <div style="font-size:11px;color:var(--c-muted);font-weight:700;text-transform:uppercase;letter-spacing:.14em;margin-bottom:3px;" data-i18n="modeSelectKicker">Выбери активность</div>
           <div class="font-display grad-text" style="font-size:26px;font-weight:700;line-height:1;" data-i18n="modeSelectTitle">Что будем играть?</div>
         </div>
-        <div id="ms-channel-badge" class="glass2" style="padding:7px 14px;display:flex;align-items:center;gap:8px;">
+        <div id="ms-channel-badge" class="glass2" onclick="app.openChannelSwitch()" title="Сменить канал" style="padding:7px 14px;display:flex;align-items:center;gap:8px;cursor:pointer;">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="2.5"/><path d="m8 3 4 3 4-3"/></svg>
           <span id="ms-channel-name" style="font-size:13px;font-weight:700;color:var(--c-accent);"></span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--c-muted)" stroke-width="2.5" style="flex-shrink:0;"><path d="M9 18l6-6-6-6"/></svg>
         </div>
       </div>
     </div>
@@ -1516,6 +1517,19 @@
     <div class="rf-confirm-btns">
       <button onclick="Raffle.closeChannelSwitch()" class="btn-ghost" style="flex:1;padding:13px;font-size:14px;" data-i18n="cancelBtn">Отмена</button>
       <button onclick="Raffle.confirmChannelSwitch()" class="btn-primary" style="flex:1;padding:13px;font-size:14px;" data-i18n="rfChangeChannelBtn">Сменить</button>
+    </div>
+  </div>
+</div>
+
+<div id="ms-channel-modal" class="rf-confirm-overlay" onclick="if(event.target===this)app.closeChannelSwitch()" style="display:none;">
+  <div class="rf-confirm-box liquid-glass" style="max-width:380px;">
+    <div class="rf-confirm-icon"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h7"/><path d="M13 2v20"/><path d="m18 9 3 3-3 3"/><path d="M21 12H10"/></svg></div>
+    <div class="rf-confirm-title" data-i18n="msChangeChannelTitle">Сменить канал</div>
+    <div class="rf-confirm-sub" data-i18n="msChangeChannelSub">Чат переключится на новый канал Twitch.</div>
+    <input type="text" id="ms-channel-input" class="roast-key-input" placeholder="twitch_channel" autocomplete="off" spellcheck="false" style="width:100%;box-sizing:border-box;font-size:15px;text-align:center;font-weight:700;" onkeydown="if(event.key==='Enter')app.confirmChannelSwitch()">
+    <div class="rf-confirm-btns">
+      <button onclick="app.closeChannelSwitch()" class="btn-ghost" style="flex:1;padding:13px;font-size:14px;" data-i18n="cancelBtn">Отмена</button>
+      <button onclick="app.confirmChannelSwitch()" class="btn-primary" style="flex:1;padding:13px;font-size:14px;" data-i18n="msChangeChannelBtn">Сменить</button>
     </div>
   </div>
 </div>
