@@ -189,6 +189,7 @@ Client.prototype._parseTags=function(str){
     tags['mod']=tags['mod']==='1';
     tags['subscriber']=tags['subscriber']==='1';
     tags['badges-raw']=tags['badges-raw']||'';
+    if(!/^#[0-9A-Fa-f]{6}$/.test(tags['color']||''))tags['color']='';
     return tags;
 };
 Client.prototype._parse=function(raw){

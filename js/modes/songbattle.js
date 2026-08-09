@@ -1694,8 +1694,21 @@ const SongBattle = (function () {
           ${tog('subWeight', tr('sbSubWeight', 'Голос саба ×2'))}
           ${tog('allowChange', tr('sbAllowChange', 'Можно менять голос'))}
           ${tog('crossYandex', tr('sbCrossYandex', 'Кнопка «Слушать в Я.Музыке»'))}
-        </div>`}`;
+        </div>`}
+        <div class="sb-set-block">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span class="sb-set-label" style="margin-bottom:0;">${tr('perfLabel', 'Производительность')}</span>
+            <span class="perf-fps font-display" style="font-size:12px;font-weight:700;color:var(--c-accent);"></span>
+          </div>
+          <div class="perf-seg">
+            <button data-perfmode="auto" onclick="app.setPerfMode('auto')">${tr('perfAuto', 'Авто')}</button>
+            <button data-perfmode="high" onclick="app.setPerfMode('high')">${tr('perfHigh', 'Высокое')}</button>
+            <button data-perfmode="medium" onclick="app.setPerfMode('medium')">${tr('perfMedium', 'Среднее')}</button>
+            <button data-perfmode="low" onclick="app.setPerfMode('low')">${tr('perfLow', 'Экономия')}</button>
+          </div>
+        </div>`;
 
+      if (window.app) app.refreshPerfUI();
       if (isTeams) this._teamsV2RenderRosterLobby();
     },
 
@@ -2178,7 +2191,6 @@ const SongBattle = (function () {
       setTimeout(() => { el.classList.remove('in'); el.classList.add('out'); setTimeout(() => el.remove(), 380); }, ttl);
     },
 
-    /* ======================= ПЕРЕКЛЮЧЕНИЕ ФАЗ ======================= */
     _showPhase() {
       const lobby = document.getElementById('sb-view-lobby');
       const stage = document.getElementById('sb-stage');
@@ -2221,7 +2233,6 @@ const SongBattle = (function () {
       });
     },
 
-    /* ======================= ЛОББИ: СПИСОК УЧАСТНИКОВ ======================= */
     renderLobby() {
       const list = document.getElementById('sb-track-list'); if (!list) return;
       const tracks = this.state.tracks;

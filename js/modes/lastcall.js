@@ -12,7 +12,7 @@ const LastCall = {
         keyword: '',
         showTopN: 5,
         cooldownSec: 0,
-        resetOnMessage: false   // ⚡ режим: таймер сбрасывается на каждое новое сообщение
+        resetOnMessage: false
     },
     state: null,
     _msgRecent: [],

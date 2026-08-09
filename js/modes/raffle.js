@@ -633,7 +633,7 @@ const Raffle = {
         if (wnd0) wnd0.style.display = 'block';
         overlay.classList.add('rf-spin-show');
 
-        const CARD = 148, GAP = 10, STEP = CARD + GAP;
+        const CARD = 166, GAP = 12, STEP = CARD + GAP;
         const TOTAL = 70, WIN_IDX = 60;
 
         const wrap = document.getElementById('rf-spin-window');
@@ -648,8 +648,8 @@ const Raffle = {
         track.innerHTML = cards.map(n => {
             const e = this.entrants.get(n) || { color: '#9ca3af' };
             return `<div class="rf-card" style="border-color:${this._rc(e.color)}66;">
-                ${this._avatarHtml(n, this._rc(e.color), 62)}
-                <div class="rf-card-name" style="color:${this._rc(e.color)}">${n}</div>
+                ${this._avatarHtml(n, this._rc(e.color), 70)}
+                <div class="rf-card-name" style="color:${this._rc(e.color)}">${escHtml(n)}</div>
             </div>`;
         }).join('');
 
@@ -659,11 +659,12 @@ const Raffle = {
         track.style.transform = 'translateX(0px)';
         void track.offsetWidth;
 
-        const dur = this.config.spinSec;
+        const EXTRA_STOP_SEC = 2.5;
+        const dur = this.config.spinSec + EXTRA_STOP_SEC;
 
         const V_TARGET = 15 * STEP;
-        const tDecel = Math.max(2.2, Math.min(5, dur * 0.28));
-        const tIn = Math.min(0.3, dur * 0.06);
+        const tDecel = Math.max(3.4, Math.min(7, dur * 0.32));
+        const tIn = Math.min(0.3, dur * 0.05);
         const tc = Math.max(tIn, dur - tDecel);
         const shapeTotal = Math.max(0.001, dur - (2 * tDecel) / 3 - tIn / 2);
         const loops = Math.max(1, Math.round((V_TARGET * shapeTotal - finalRest) / stripW));
@@ -737,9 +738,9 @@ const Raffle = {
         const note = pool.length > MAX ? `<div class="rf-elim-note">${shown.length} ${t('rfElimOf') || 'финалистов из'} ${pool.length}</div>` : '';
         board.innerHTML = note + shown.map(n => {
             const e = this.entrants.get(n) || { color: '#9ca3af' };
-            return `<div class="rf-elim-cell" data-name="${n}" style="border-color:${this._rc(e.color)}55;">
+            return `<div class="rf-elim-cell" data-name="${escHtml(n)}" style="border-color:${this._rc(e.color)}55;">
                 ${this._avatarHtml(n, this._rc(e.color), 40)}
-                <div class="rf-elim-cell-name" style="color:${this._rc(e.color)}">${n}</div>
+                <div class="rf-elim-cell-name" style="color:${this._rc(e.color)}">${escHtml(n)}</div>
             </div>`;
         }).join('');
 
@@ -1040,7 +1041,10 @@ const Raffle = {
         if (!show) this.readSettings();
         p.style.display = show ? 'block' : 'none';
         this._showSettingsScrim(show);
-        if (show) { const r = document.getElementById('rf-rules-panel'); if (r) r.style.display = 'none'; }
+        if (show) {
+            const r = document.getElementById('rf-rules-panel'); if (r) r.style.display = 'none';
+            if (window.app) app.refreshPerfUI();
+        }
     },
 
     toggleRules() {

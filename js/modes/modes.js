@@ -13,7 +13,7 @@ const Modes = {
     },
 
     renderClassic(u) {
-        UI.setBadge(t('badgeClassic'), 'var(--c-accent)');
+        UI.setBadge(t('badgeClassic'), 'var(--c-accent)', 'target');
         document.getElementById('question-area').innerHTML =
             `<div style="font-size:15px;color:var(--c-muted);margin-bottom:10px;">${t('questionClassic')}</div>
              <div class="glass2" style="padding:17px 20px;font-size:19px;">"${Emotes.parse(u.text)}"</div>
@@ -25,7 +25,7 @@ const Modes = {
     },
 
     renderTF(u) {
-        UI.setBadge(t('badgeTF'), 'var(--c-blue)');
+        UI.setBadge(t('badgeTF'), 'var(--c-blue)', 'shuffle');
         const words = u.text.split(' ');
         const rwIdx = [];
         words.forEach((w, i) => {
@@ -74,7 +74,7 @@ const Modes = {
     },
 
     renderCensored(u) {
-        UI.setBadge(t('badgeCensored'), 'var(--c-accent2)');
+        UI.setBadge(t('badgeCensored'), 'var(--c-accent2)', 'redact');
         const words = u.text.split(' ');
         const cands = words.map((w, i) => ({ w, i, c: w.replace(/[^\wа-яёА-ЯЁ-]/gi, '') })).filter(o => o.c.length > 3 && !Emotes.isEmote(o.w));
         if (!cands.length) { app.state.currentMode = 'CLASSIC'; this.renderClassic(u); return; }
@@ -95,7 +95,7 @@ const Modes = {
     },
 
     renderWhoseMsg(u) {
-        UI.setBadge(t('badgeWhoseMsg'), 'var(--c-green)');
+        UI.setBadge(t('badgeWhoseMsg'), 'var(--c-green)', 'chat');
         document.getElementById('question-area').innerHTML =
             `<div style="font-size:15px;color:var(--c-muted);margin-bottom:10px;">${t('questionWhoseMsg')}</div>
              <div style="font-size:27px;font-weight:800;margin:8px 0;color:${u.user?.color || '#9ca3af'};">${UI.escHtml(u.name)}</div>
@@ -118,14 +118,14 @@ const Modes = {
         const isMod = !!(u.user?.isMod || tg.mod || tg.badges?.moderator) || isBroadcaster;
         const isVip = !!(tg.badges?.vip);
         if (app.config.vipAsMod) {
-            UI.setBadge(t('badgeModView2'), 'var(--c-green)');
+            UI.setBadge(t('badgeModView2'), 'var(--c-green)', 'shield');
             document.getElementById('question-area').innerHTML =
                 `<div style="font-size:15px;color:var(--c-muted);margin-bottom:10px;">${t('questionModView')}</div>
                  <div class="glass2" style="padding:17px 20px;font-size:19px;">"${Emotes.parse(u.text)}"</div>
                  ${this.linkBlock(u.text)}`;
             app.renderAnswers([{ html: t('answerMod'), correct: isMod }, { html: t('answerViewerShort'), correct: !isMod }]);
         } else {
-            UI.setBadge(t('badgeModView3'), 'var(--c-green)');
+            UI.setBadge(t('badgeModView3'), 'var(--c-green)', 'shield');
             const role = isMod ? 'mod' : (isVip ? 'vip' : 'viewer');
             document.getElementById('question-area').innerHTML =
                 `<div style="font-size:15px;color:var(--c-muted);margin-bottom:10px;">${t('questionModView')}</div>
@@ -161,7 +161,7 @@ const Modes = {
             if (candidates.length) { mediaUser = candidates[0].user; mediaUrl = candidates[0].url; }
             else { app.state.currentMode = 'CLASSIC'; this.renderClassic(u); return; }
         }
-        UI.setBadge(t('badgeMedia'), 'var(--c-accent2)');
+        UI.setBadge(t('badgeMedia'), 'var(--c-accent2)', 'image');
         const cardId = 'media-' + Date.now();
         const copyBtn = `<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;">${makeCopyBtn(mediaUrl)}<span style="font-size:11px;color:var(--c-muted);">${t('copyLink')}</span></div>`;
         const sp = isSpotify(mediaUrl) ? getSpotifyInfo(mediaUrl) : null;
@@ -169,7 +169,7 @@ const Modes = {
         const clipThumb = !ytId && !sp && isTwitchClip(mediaUrl) ? getTwitchClipThumbnail(mediaUrl) : null;
         let mediaHtml = '';
         if (ytId) {
-            mediaHtml = `<div id="${cardId}" class="yt-card"><div class="yt-poster" onclick="app.playYouTube('${cardId}','${ytId}')"><img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" alt="" onerror="this.src='https://img.youtube.com/vi/${ytId}/mqdefault.jpg'"><div class="yt-play"><svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div></div><div class="yt-meta"><div class="yt-title" id="${cardId}-title">${t('ytVideo')}</div><div class="yt-author" id="${cardId}-author">${t('ytLoading')}</div></div></div>`;
+            mediaHtml = `<div id="${cardId}" class="yt-card"><div class="yt-poster" onclick="app.revealOrPlay(this,'yt','${cardId}','${ytId}')"><img src="https://img.youtube.com/vi/${ytId}/hqdefault.jpg" class="media-blur" alt="" onerror="this.src='https://img.youtube.com/vi/${ytId}/mqdefault.jpg'"><div class="media-reveal-btn">🖼️</div><div class="yt-play hidden-icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg></div></div><div class="yt-meta"><div class="yt-title" id="${cardId}-title">${t('ytVideo')}</div><div class="yt-author" id="${cardId}-author">${t('ytLoading')}</div></div></div>`;
             fetchYtTitle(mediaUrl).then(meta => {
                 const tEl = document.getElementById(cardId + '-title');
                 const aEl = document.getElementById(cardId + '-author');
@@ -177,7 +177,7 @@ const Modes = {
                 if (aEl) aEl.textContent = meta?.author ? '▶ ' + meta.author : 'YouTube';
             });
         } else if (sp) {
-            mediaHtml = `<div id="${cardId}" class="sp-card"><img class="sp-cover" id="${cardId}-cover" src="" alt="" style="display:none;"><div class="sp-cover sp-cover-ph" id="${cardId}-coverph">🎵</div><div class="sp-meta"><div class="sp-label">${t('spotifyLabel')}</div><div class="sp-title" id="${cardId}-title">${t('spLoading')}</div></div><button class="sp-play" onclick="app.playSpotify('${cardId}','${sp.type}','${sp.id}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="#06120a"><path d="M8 5v14l11-7z"/></svg></button></div>`;
+            mediaHtml = `<div id="${cardId}" class="sp-card"><div class="sp-cover-wrap" onclick="app.revealOrPlay(this,'sp')"><img class="sp-cover media-blur" id="${cardId}-cover" src="" alt="" style="display:none;"><div class="sp-cover sp-cover-ph" id="${cardId}-coverph">🎵</div><div class="media-reveal-btn" style="border-radius:9px;">🎵</div></div><div class="sp-meta"><div class="sp-label">${t('spotifyLabel')}</div><div class="sp-title" id="${cardId}-title">${t('spLoading')}</div></div><button class="sp-play" onclick="app.playSpotify('${cardId}','${sp.type}','${sp.id}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="#06120a"><path d="M8 5v14l11-7z"/></svg></button></div>`;
             fetchSpotifyMeta(mediaUrl).then(meta => {
                 const tEl = document.getElementById(cardId + '-title');
                 const cEl = document.getElementById(cardId + '-cover');
@@ -192,7 +192,7 @@ const Modes = {
             let domain = 'ссылка';
             try { domain = new URL(mediaUrl).hostname.replace(/^www\./, ''); } catch(e) {}
             const short = mediaUrl.length > 52 ? mediaUrl.slice(0, 52) + '…' : mediaUrl;
-            mediaHtml = `<div class="glass2" style="padding:14px 16px;max-width:360px;margin:0 auto;display:flex;align-items:center;gap:12px;"><div style="width:44px;height:44px;border-radius:12px;background:rgba(101,208,255,0.14);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;">🔗</div><div style="text-align:left;min-width:0;flex:1;"><div style="font-size:13px;font-weight:700;color:var(--c-blue);">${domain}</div><div style="font-size:10px;color:var(--c-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${short}</div></div></div>`;
+            mediaHtml = `<div class="glass2" style="padding:14px 16px;max-width:360px;margin:0 auto;display:flex;align-items:center;gap:12px;"><div style="width:44px;height:44px;border-radius:12px;background:rgba(101,208,255,0.14);display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;">🔗</div><div style="text-align:left;min-width:0;flex:1;"><div style="font-size:13px;font-weight:700;color:var(--c-blue);">${Security.esc(domain)}</div><div style="font-size:10px;color:var(--c-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${Security.esc(short)}</div></div></div>`;
         }
         document.getElementById('question-area').innerHTML =
             `<div style="font-size:15px;color:var(--c-muted);margin-bottom:10px;">${t('questionMedia')}</div>
@@ -204,7 +204,7 @@ const Modes = {
     renderEmoteOrWord(u) {
         const words = u.text.trim().split(/\s+/);
         if (words.length < 2) { app.state.currentMode = 'CLASSIC'; this.renderClassic(u); return; }
-        UI.setBadge(t('badgeEmote'), 'var(--c-blue)');
+        UI.setBadge(t('badgeEmote'), 'var(--c-blue)', 'smile');
         const last = words[words.length - 1];
         const is7tv = Emotes.is7tv(last), isEmote = Emotes.isEmote(last);
         const correctType = is7tv ? '7tv' : (isEmote ? 'emote' : 'word');
@@ -228,7 +228,7 @@ const Modes = {
         if (msgs.length < 2) { app.state.currentMode = 'CLASSIC'; this.renderClassic(u); return; }
         const targetName = u.name;
         const target = u.user || app.users.get(targetName);
-        UI.setBadge(t('badgeDetective'), 'var(--c-accent)');
+        UI.setBadge(t('badgeDetective'), 'var(--c-accent)', 'search');
         app.shuffle(msgs);
         const shownMsg = msgs[0], correctMsg = msgs[1];
         app._revealedTexts.add(shownMsg); app._revealedTexts.add(correctMsg);
@@ -257,7 +257,7 @@ const Modes = {
         const found = scan(u);
         if (!found) { app.state.currentMode = 'CLASSIC'; this.renderClassic(u); return; }
         const pick = { user: u.user, name: u.name, text: u.text, emote: found };
-        UI.setBadge(t('badge7tv'), 'var(--c-accent2)');
+        UI.setBadge(t('badge7tv'), 'var(--c-accent2)', 'star');
         const shown = pick.text.split(/\s+/).map(w =>
             w === pick.emote
                 ? `<span style="display:inline-flex;width:30px;height:30px;border-radius:7px;background:rgba(255,107,145,.16);border:1px dashed rgba(255,107,145,.5);vertical-align:middle;align-items:center;justify-content:center;font-size:13px;color:var(--c-red);font-weight:800;">?</span>`
@@ -279,7 +279,7 @@ const Modes = {
     renderFirstWord(u) {
         const words = u.text.trim().split(/\s+/);
         if (words.length < 2) { app.state.currentMode = 'CLASSIC'; this.renderClassic(u); return; }
-        UI.setBadge(t('badgeFirstword'), 'var(--c-accent2)');
+        UI.setBadge(t('badgeFirstword'), 'var(--c-accent2)', 'type');
         const first = words[0];
         if (!app._firstWordTrapCount) app._firstWordTrapCount = 0;
         const useTrap = app._firstWordTrapCount < 2 && Math.random() < 0.05;
@@ -324,7 +324,7 @@ const Modes = {
         if (tMsgs.length < 2) { app.state.currentMode = 'CLASSIC'; this.renderClassic(u); return; }
         const targetName = u.name;
         const target = u.user || app.users.get(targetName);
-        UI.setBadge(t('badge2of4'), 'var(--c-green)');
+        UI.setBadge(t('badge2of4'), 'var(--c-green)', 'users');
         app.shuffle(tMsgs);
         const correctTwo = tMsgs.slice(0, 2);
         const others = []; const seen = new Set(correctTwo);
@@ -381,7 +381,7 @@ const Modes = {
         const correctAuthor = base.name;
         const decoyAuthors = app.getDistractors(correctAuthor, 3);
 
-        UI.setBadge(t('badgeEmojiChain'), 'var(--c-accent2)');
+        UI.setBadge(t('badgeEmojiChain'), 'var(--c-accent2)', 'link');
         document.getElementById('question-area').innerHTML =
             `<div style="font-size:15px;color:var(--c-muted);margin-bottom:10px;">${t('questionEmojiChain')}</div>
              <div class="glass2" style="padding:18px 22px;margin-bottom:10px;">
@@ -395,7 +395,7 @@ const Modes = {
     },
 
     renderCapsCheck(u) {
-        UI.setBadge(t('badgeCapsCheck') || '🎯 КАПС ИЛИ ОБЫЧНО?', 'var(--c-gold)');
+        UI.setBadge(t('badgeCapsCheck') || 'КАПС ИЛИ ОБЫЧНО?', 'var(--c-gold)', 'alert');
         const text = u.text;
         const isAllCaps = text === text.toUpperCase() && /[a-zа-яё]/i.test(text) && text.length >= 4;
 
@@ -430,12 +430,12 @@ const Modes = {
             if (Math.abs(o.idx - targetIdx) >= 2) { opponent = o; break; }
         }
         const targetFirst = targetIdx < opponent.idx;
-        UI.setBadge(t('badgeSpeedRace') || '⚡ КТО БЫСТРЕЕ?', 'var(--c-blue)');
+        UI.setBadge(t('badgeSpeedRace') || 'КТО БЫСТРЕЕ?', 'var(--c-blue)', 'zap');
         const targetUser = u.user || { name: u.name, color: '#9ca3af' };
         const oppUser = app.users.get(opponent.name) || { name: opponent.name, color: '#9ca3af' };
         const card = (usr, txt) => `
             <div class="glass2" style="padding:14px 16px;">
-              <div style="font-size:13px;font-weight:800;color:${usr.color || '#9ca3af'};margin-bottom:6px;">${usr.name}</div>
+              <div style="font-size:13px;font-weight:800;color:${usr.color || '#9ca3af'};margin-bottom:6px;">${Security.esc(usr.name)}</div>
               <div style="font-size:14px;line-height:1.45;">"${Emotes.parse(txt.length > 70 ? txt.slice(0,70)+'…' : txt)}"</div>
             </div>`;
         document.getElementById('question-area').innerHTML =
@@ -446,8 +446,8 @@ const Modes = {
              </div>`;
 
         app.renderAnswers([
-            { html: `<span style="font-weight:800;">${targetUser.name}</span> <span style="color:var(--c-muted);font-size:12px;">${t('speedFirst') || '— написал первым'}</span>`, correct: targetFirst },
-            { html: `<span style="font-weight:800;">${oppUser.name}</span> <span style="color:var(--c-muted);font-size:12px;">${t('speedFirst') || '— написал первым'}</span>`, correct: !targetFirst }
+            { html: `<span style="font-weight:800;">${Security.esc(targetUser.name)}</span> <span style="color:var(--c-muted);font-size:12px;">${t('speedFirst') || '— написал первым'}</span>`, correct: targetFirst },
+            { html: `<span style="font-weight:800;">${Security.esc(oppUser.name)}</span> <span style="color:var(--c-muted);font-size:12px;">${t('speedFirst') || '— написал первым'}</span>`, correct: !targetFirst }
         ]);
     }
 };

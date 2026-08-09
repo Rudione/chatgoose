@@ -49,10 +49,6 @@ const Router = {
     init() {
         if (this._bound) return;
         this._bound = true;
-        // We never call history.back()/forward() ourselves - every in-app
-        // navigation uses pushState/replaceState directly, so this handler
-        // only has to react to the real browser back/forward buttons and
-        // render whatever hash the user landed on.
         window.addEventListener('popstate', () => {
             const next = this.fromHash();
             if (next === this.path) return;
@@ -89,8 +85,6 @@ const Router = {
     back() {
         const parent = this.parentOf(this.path);
         if (!parent) return;
-        // Replace rather than push: going "back" shouldn't leave a
-        // forward-navigable trace of the screen we just left.
         this.go(parent, { replace: true });
     },
 

@@ -150,40 +150,22 @@ const Roast = {
     },
 
     KEYS_SESSION: 'cg_roast_keys_s',
-    KEYS_PERSIST_FLAG: 'cg_roast_keys_persist',
-
-    keysPersisted() {
-        try { return localStorage.getItem(this.KEYS_PERSIST_FLAG) === '1'; } catch (e) { return false; }
-    },
-
-    setKeysPersisted(on) {
-        try {
-            localStorage.setItem(this.KEYS_PERSIST_FLAG, on ? '1' : '0');
-            if (!on) localStorage.removeItem('cg_roast_keys');
-            else Storage.save('cg_roast_keys', this.config.keys);
-        } catch (e) {}
-        this._renderKeyNotice();
-    },
 
     _loadKeys() {
         try {
-            const ses = sessionStorage.getItem(this.KEYS_SESSION);
+            const ses = SecureStore.getItem(this.KEYS_SESSION);
             if (ses) return JSON.parse(ses);
         } catch (e) {}
-        if (!this.keysPersisted()) return null;
-        return Storage.load('cg_roast_keys', null);
+        return null;
     },
 
     _saveKeys(keys) {
-        try { sessionStorage.setItem(this.KEYS_SESSION, JSON.stringify(keys)); } catch (e) {}
-        if (this.keysPersisted()) Storage.save('cg_roast_keys', keys);
-        else { try { localStorage.removeItem('cg_roast_keys'); } catch (e) {} }
+        SecureStore.setItem(this.KEYS_SESSION, JSON.stringify(keys));
     },
 
     clearKeys() {
         Object.keys(this.config.keys).forEach(k => { this.config.keys[k] = ''; });
-        try { sessionStorage.removeItem(this.KEYS_SESSION); } catch (e) {}
-        try { localStorage.removeItem('cg_roast_keys'); } catch (e) {}
+        SecureStore.removeItem(this.KEYS_SESSION);
         ['anthropic','openai','xai','deepseek','custom'].forEach(pv => {
             const inp = document.getElementById('roast-key-' + pv);
             if (inp) inp.value = '';
@@ -194,13 +176,7 @@ const Roast = {
     _renderKeyNotice() {
         const el = document.getElementById('roast-key-notice');
         if (!el) return;
-        const persisted = this.keysPersisted();
-        el.textContent = persisted
-            ? (t('roastKeysPersisted') || 'Ключи сохраняются на этом устройстве. Не показывай этот экран в эфире.')
-            : (t('roastKeysSession') || 'Ключи живут только до закрытия вкладки и не сохраняются на диск.');
-        el.classList.toggle('roast-key-warn', persisted);
-        const cb = document.getElementById('roast-keys-persist');
-        if (cb) cb.checked = persisted;
+        el.textContent = t('roastKeysSession') || 'Ключи живут только до закрытия вкладки и не сохраняются на диск.';
     },
 
     saveSettings() {

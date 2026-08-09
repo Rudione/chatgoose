@@ -1,4 +1,4 @@
-const URL_RE = /https?:\/\/[^\s]+/i;
+const URL_RE = /https?:\/\/[^\s"'<>]+/i;
 
 function extractUrl(txt) {
     const m = txt.match(URL_RE);

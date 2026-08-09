@@ -52,31 +52,29 @@ const TwitchAuth = {
 
     purgeAll() {
         let list = [];
-        try { list = JSON.parse(localStorage.getItem(this.ACCOUNTS_KEY) || '[]'); } catch (e) {}
+        try { list = JSON.parse(SecureStore.getItem(this.ACCOUNTS_KEY) || '[]'); } catch (e) {}
         if (Array.isArray(list)) list.forEach(a => { if (a && a.token) Security.revokeToken(a.token); });
-        try {
-            localStorage.removeItem(this.ACCOUNTS_KEY);
-            localStorage.removeItem(this.ACTIVE_KEY);
-            localStorage.setItem(this.MODE_KEY, 'manual');
-            Object.keys(localStorage).forEach(k => { if (k.indexOf('tw_followers_hist_') === 0) localStorage.removeItem(k); });
-        } catch (e) {}
+        SecureStore.removeItem(this.ACCOUNTS_KEY);
+        SecureStore.removeItem(this.ACTIVE_KEY);
+        SecureStore.setItem(this.MODE_KEY, 'manual');
+        try { Object.keys(localStorage).forEach(k => { if (k.indexOf('tw_followers_hist_') === 0) localStorage.removeItem(k); }); } catch (e) {}
         return Array.isArray(list) ? list.length : 0;
     },
 
     accounts() {
         if (this.disabled()) return [];
         let list;
-        try { list = JSON.parse(localStorage.getItem(this.ACCOUNTS_KEY) || '[]'); } catch (e) { return []; }
+        try { list = JSON.parse(SecureStore.getItem(this.ACCOUNTS_KEY) || '[]'); } catch (e) { return []; }
         if (!Array.isArray(list)) return [];
         const alive = list.filter(a => a && a.login && a.token && Security.tokenAlive(a) && !Security.tokenStale(a));
         if (alive.length !== list.length) {
             const dropped = list.filter(a => alive.indexOf(a) === -1);
             dropped.forEach(a => { if (a && a.token) Security.revokeToken(a.token); });
             this._saveAccounts(alive);
-            const act = localStorage.getItem(this.ACTIVE_KEY);
+            const act = SecureStore.getItem(this.ACTIVE_KEY);
             if (act && !alive.some(a => a.login === act)) {
-                localStorage.removeItem(this.ACTIVE_KEY);
-                try { localStorage.setItem(this.MODE_KEY, 'manual'); } catch (e) {}
+                SecureStore.removeItem(this.ACTIVE_KEY);
+                SecureStore.setItem(this.MODE_KEY, 'manual');
             }
         }
         return alive;
@@ -86,7 +84,7 @@ const TwitchAuth = {
         const login = this.activeLogin();
         if (!login) return;
         let list;
-        try { list = JSON.parse(localStorage.getItem(this.ACCOUNTS_KEY) || '[]'); } catch (e) { return; }
+        try { list = JSON.parse(SecureStore.getItem(this.ACCOUNTS_KEY) || '[]'); } catch (e) { return; }
         if (!Array.isArray(list)) return;
         const rec = list.find(a => a && a.login === login);
         if (!rec) return;
@@ -94,27 +92,27 @@ const TwitchAuth = {
         this._saveAccounts(list);
     },
     _saveAccounts(list) {
-        try { localStorage.setItem(this.ACCOUNTS_KEY, JSON.stringify(list)); } catch (e) {}
+        SecureStore.setItem(this.ACCOUNTS_KEY, JSON.stringify(list));
     },
 
     activeLogin() {
         if (this.disabled()) return null;
-        return localStorage.getItem(this.MODE_KEY) === 'manual' ? null : (localStorage.getItem(this.ACTIVE_KEY) || null);
+        return SecureStore.getItem(this.MODE_KEY) === 'manual' ? null : (SecureStore.getItem(this.ACTIVE_KEY) || null);
     },
     activeAccount() {
         const login = this.activeLogin();
         if (!login) return null;
         return this.accounts().find(a => a.login === login) || null;
     },
-    isManualMode() { return localStorage.getItem(this.MODE_KEY) === 'manual'; },
+    isManualMode() { return SecureStore.getItem(this.MODE_KEY) === 'manual'; },
 
     setActive(login) {
-        localStorage.setItem(this.ACTIVE_KEY, login);
-        localStorage.setItem(this.MODE_KEY, 'account');
+        SecureStore.setItem(this.ACTIVE_KEY, login);
+        SecureStore.setItem(this.MODE_KEY, 'account');
         this._emit();
     },
     useManualEntry() {
-        localStorage.setItem(this.MODE_KEY, 'manual');
+        SecureStore.setItem(this.MODE_KEY, 'manual');
         this._emit();
     },
     removeAccount(login) {
@@ -124,15 +122,15 @@ const TwitchAuth = {
         this._saveAccounts(list);
         if (this.activeLogin() === login) {
             if (list.length) this.setActive(list[0].login);
-            else { localStorage.removeItem(this.ACTIVE_KEY); this.useManualEntry(); }
+            else { SecureStore.removeItem(this.ACTIVE_KEY); this.useManualEntry(); }
         } else {
             this._emit();
         }
     },
     logoutAll() {
         this.accounts().forEach(a => { if (a.token) Security.revokeToken(a.token); });
-        localStorage.removeItem(this.ACCOUNTS_KEY);
-        localStorage.removeItem(this.ACTIVE_KEY);
+        SecureStore.removeItem(this.ACCOUNTS_KEY);
+        SecureStore.removeItem(this.ACTIVE_KEY);
         this.useManualEntry();
     },
 
@@ -231,6 +229,7 @@ const TwitchAuth = {
     },
 
     async _boot() {
+        await SecureStore.ready;
         if (this.disabled()) {
             this.purgeAll();
             this.pending = false;

@@ -145,7 +145,7 @@ window.app = {
         this.setVignette(0);
     },
 
-    openSettings() { document.getElementById('settings-panel').classList.add('open'); document.getElementById('settings-scrim').classList.add('open'); this.refreshPerfUI(); this.refreshSecurityUI(); Sound.click(); },
+    openSettings() { document.getElementById('settings-panel').classList.add('open'); document.getElementById('settings-scrim').classList.add('open'); this.refreshPerfUI(); Sound.click(); },
 
     setPerfMode(mode) {
         Sound.click();
@@ -154,83 +154,24 @@ window.app = {
         if (window.SongBattle && SongBattle.isActive && SongBattle._startViz) { SongBattle._stopViz(); SongBattle._startViz(); }
     },
 
-    toggleAuth(on) {
-        Sound.click();
-        if (!on) {
-            const n = TwitchAuth.purgeAll();
-            Features.set('twitchAuth', false);
-            Features.set('profile', false);
-            if (n) alert((t('secAuthOffDone') || 'Авторизация выключена. Отозвано токенов: {n}').replace('{n}', n));
-        } else {
-            if (!confirm(t('secAuthOnConfirm') || 'Включить вход через Twitch? Сайт снова будет хранить токен в браузере.')) {
-                const cb = document.getElementById('sec-auth-enabled');
-                if (cb) cb.checked = false;
-                return;
-            }
-            Features.set('twitchAuth', true);
-            Features.set('profile', true);
-        }
-        if (window.TwitchAuthUI) TwitchAuthUI.render();
-        this.refreshSecurityUI();
-    },
-
-    toggleStreamSafe(on) {
-        Security.setStreamSafe(on);
-        Sound.click();
-    },
-
-    async revokeAllSessions() {
-        if (!confirm(t('secRevokeConfirm') || 'Отозвать все токены Twitch? Придётся войти заново.')) return;
-        const accs = TwitchAuth.accounts();
-        TwitchAuth.logoutAll();
-        alert((t('secRevokeDone') || 'Отозвано токенов: {n}').replace('{n}', accs.length));
-        this.refreshSecurityUI();
-    },
-
-    panicWipe() {
-        if (!confirm(t('secPanicConfirm') || 'Стереть ВСЁ: токены, ключи, настройки и историю? Отменить нельзя.')) return;
-        if (!confirm(t('secPanicConfirm2') || 'Точно? Все данные на этом устройстве будут удалены.')) return;
-        Security.panic();
-        location.href = location.pathname;
-    },
-
-    refreshSecurityUI() {
-        const cb = document.getElementById('sec-stream-safe');
-        if (cb) cb.checked = Security.streamSafe();
-        const ac = document.getElementById('sec-auth-enabled');
-        if (ac) ac.checked = Features.on('twitchAuth');
-        const an = document.getElementById('sec-auth-note');
-        if (an) {
-            const off = Features.off('twitchAuth');
-            an.textContent = off
-                ? (t('secAuthOff') || 'Выключено. Сайт не хранит токены и не запрашивает доступ к аккаунту. Канал вводится вручную.')
-                : (t('secAuthOn') || 'Включено. Токен хранится в этом браузере.');
-            an.classList.toggle('sec-warn', !off);
-        }
-        const info = document.getElementById('sec-token-info');
-        if (!info) return;
-        const acc = TwitchAuth.activeAccount();
-        if (!acc) { info.textContent = t('secNoToken') || 'Нет активных токенов.'; info.classList.remove('sec-warn'); return; }
-        const left = acc.expiresAt ? Math.max(0, acc.expiresAt - Date.now()) : 0;
-        const days = Math.floor(left / 86400000);
-        const hours = Math.floor((left % 86400000) / 3600000);
-        info.textContent = (t('secTokenLeft') || 'Токен {u}: осталось {d} д. {h} ч.')
-            .replace('{u}', acc.login).replace('{d}', days).replace('{h}', hours);
-        info.classList.toggle('sec-warn', days < 2);
-    },
-
     refreshPerfUI() {
-        const seg = document.getElementById('perf-seg');
-        if (seg) seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.perfmode === Perf.mode));
-        const fps = document.getElementById('perf-fps');
-        if (fps) {
-            const names = { high: t('perfHigh') || 'Высокое', medium: t('perfMedium') || 'Среднее', low: t('perfLow') || 'Экономия' };
-            fps.innerText = (Perf.fps ? Perf.fps + ' FPS · ' : '') + (names[Perf.tier] || Perf.tier);
-        }
+        document.querySelectorAll('.perf-seg').forEach(seg => {
+            seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.perfmode === Perf.mode));
+        });
+        const names = { high: t('perfHigh') || 'Высокое', medium: t('perfMedium') || 'Среднее', low: t('perfLow') || 'Экономия' };
+        const fpsText = (Perf.fps ? Perf.fps + ' FPS · ' : '') + (names[Perf.tier] || Perf.tier);
+        document.querySelectorAll('.perf-fps').forEach(fps => { fps.innerText = fpsText; });
         clearTimeout(this._perfUiIv);
-        if (document.getElementById('settings-panel')?.classList.contains('open')) {
-            this._perfUiIv = setTimeout(() => this.refreshPerfUI(), 1200);
-        }
+        const anyVisible = Array.from(document.querySelectorAll('.perf-seg')).some(el => el.offsetParent !== null);
+        if (anyVisible) this._perfUiIv = setTimeout(() => this.refreshPerfUI(), 1200);
+    },
+
+    togglePerfPopover() {
+        const pop = document.getElementById('perf-popover');
+        if (!pop) return;
+        const opening = !pop.classList.contains('open');
+        pop.classList.toggle('open', opening);
+        if (opening) { this.refreshPerfUI(); Sound.click(); }
     },
     closeSettings() {
         document.getElementById('settings-panel').classList.remove('open');
@@ -1166,6 +1107,18 @@ window.app = {
         this.resolveRound(ok);
     },
 
+    revealOrPlay(el, kind, a, b) {
+        const img = el.querySelector('img.media-blur');
+        if (img && !img.classList.contains('revealed')) {
+            img.classList.add('revealed');
+            const btn = el.querySelector('.media-reveal-btn'); if (btn) btn.classList.add('hidden-icon');
+            const play = el.querySelector('.yt-play'); if (play) play.classList.remove('hidden-icon');
+            Sound.click();
+            return;
+        }
+        if (kind === 'yt') this.playYouTube(a, b);
+    },
+
     playYouTube(cardId, ytId) {
         const card = document.getElementById(cardId); if (!card) return;
         const poster = card.querySelector('.yt-poster'); if (!poster) return;
@@ -1244,7 +1197,7 @@ window.app = {
             const hasUrl = extractUrl(m.text);
             let content = `"${Emotes.parse(m.text.substring(0, 56))}${m.text.length > 56 ? '…' : ''}"`;
             let copyHtml = '';
-            if (hasUrl) { copyHtml = `<div style="display:flex;align-items:center;gap:6px;margin-top:6px;">${makeCopyBtn(hasUrl)}<span style="font-size:10px;color:var(--c-blue);">${hasUrl.substring(0, 32)}${hasUrl.length > 32 ? '…' : ''}</span></div>`; const preview = makeLinkPreview(hasUrl); if (preview) copyHtml += preview; }
+            if (hasUrl) { copyHtml = `<div style="display:flex;align-items:center;gap:6px;margin-top:6px;">${makeCopyBtn(hasUrl)}<span style="font-size:10px;color:var(--c-blue);">${Security.esc(hasUrl.substring(0, 32))}${hasUrl.length > 32 ? '…' : ''}</span></div>`; const preview = makeLinkPreview(hasUrl); if (preview) copyHtml += preview; }
             card.innerHTML = `<div style="font-size:11px;color:var(--c-muted);margin-bottom:4px;">💬 №${i + 1}</div><div style="font-size:13px;">${content}${copyHtml}</div>`;
             card.addEventListener('dragstart', e => { e.dataTransfer.setData('msgIdx', String(i)); card.classList.add('dragging'); });
             card.addEventListener('dragend', () => card.classList.remove('dragging'));
@@ -1259,7 +1212,7 @@ window.app = {
             const u = this.users.get(n); const c = u?.color || '#9ca3af';
             const wrap = document.createElement('div'); wrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;margin-bottom:10px;';
             const h = document.createElement('div'); h.style.cssText = `font-size:13px;font-weight:700;color:${c};display:flex;align-items:center;gap:5px;`;
-            h.innerHTML = UI.badges({ user: u }) + `<span>${n}</span>`;
+            h.innerHTML = UI.badges({ user: u }) + `<span>${Security.esc(n)}</span>`;
             const zone = document.createElement('div'); zone.className = 'final-drop-zone'; zone.dataset.player = n; zone.style.cssText = 'flex-direction:column;gap:6px;align-items:stretch;';
             zone.innerHTML = `<span class="fz-placeholder" style="font-size:12px;color:rgba(255,255,255,.22);text-align:center;">${t('dropHere')}</span>`;
             zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
@@ -1480,6 +1433,7 @@ window.app = {
         if (!document.getElementById('rules-modal')?.classList.contains('hidden')) app.closeRules();
         else if (!document.getElementById('faq-modal')?.classList.contains('hidden')) app.closeFaq();
         else if (document.getElementById('settings-panel')?.classList.contains('open')) app.closeSettings();
+        else if (document.getElementById('perf-popover')?.classList.contains('open')) document.getElementById('perf-popover').classList.remove('open');
         else if (document.querySelector('.modal-overlay.show, .rf-confirm-overlay[style*="flex"], .sb-scrim.show')) return;
         else if (UI.currentSceneId && UI.currentSceneId !== 'login' && UI.currentSceneId !== 'loading') app.navBack();
     });
@@ -1495,6 +1449,8 @@ window.app = {
     document.addEventListener('click', e => {
         if (!e.target.closest('.tooltip-btn') && !e.target.closest('.tooltip-pop'))
             document.querySelectorAll('.tooltip-pop.show').forEach(p => p.classList.remove('show'));
+        if (!e.target.closest('#btn-perf') && !e.target.closest('#perf-popover'))
+            document.getElementById('perf-popover')?.classList.remove('open');
     });
     const h = Storage.load(Storage.KEYS.history, []);
     if (h.length) {

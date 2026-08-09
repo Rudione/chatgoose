@@ -14,7 +14,7 @@ const Oracle = {
         firstOnly: true,
         roundsTotal: 1,
         scoring: 'closest',
-        announcePostfact: false  // ответ вводится после раунда
+        announcePostfact: false
     },
 
     session: null,

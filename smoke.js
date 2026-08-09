@@ -2,11 +2,11 @@ const fs = require('fs');
 const path = require('path');
 const { JSDOM } = require('jsdom');
 
-const ROOT = '/home/claude/twitchone';
+const ROOT = __dirname;
 let pass = 0, fail = 0;
 const ok = (n, c) => { if (c) { pass++; console.log('  ok   ' + n); } else { fail++; console.log('  FAIL ' + n); } };
 
-function bootSync(hash, storage) {
+function bootSync(hash, storage, opts) {
     const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
     const dom = new JSDOM(html, {
         url: 'https://rudione.github.io/twitchone/' + (hash || ''),
@@ -50,14 +50,20 @@ function bootSync(hash, storage) {
         'js/modes/modes.js', 'js/modes/lastcall.js', 'js/modes/roast.js', 'js/modes/oracle.js',
         'js/modes/raffle.js', 'js/modes/songbattle.js', 'js/core/profile.js', 'js/core/app.js'
     ];
-    const src = files.map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n;\n');
+    const src = files.map(f => {
+        let text = fs.readFileSync(path.join(ROOT, f), 'utf8');
+        if (opts && opts.enableAuthForTest && f === 'js/core/features.js') {
+            text = text.replace('twitchAuth: false', 'twitchAuth: true').replace('profile: false', 'profile: true');
+        }
+        return text;
+    }).join('\n;\n');
     try { w.eval(src); }
     catch (e) { throw new Error('bundle -> ' + e.message + '\n' + (e.stack || '').split('\n').slice(0, 3).join('\n')); }
     return w;
 }
 
-async function boot(hash, storage) {
-    const w = bootSync(hash, storage);
+async function boot(hash, storage, opts) {
+    const w = bootSync(hash, storage, opts);
     for (let i = 0; i < 8; i++) await new Promise(r => setImmediate(r));
     return w;
 }
@@ -316,67 +322,81 @@ console.log('\n[18] AI endpoint classification');
     ok('malformed rejected', S.classifyEndpoint('nonsense').ok === false);
 }
 
-console.log('\n[19] token lifecycle');
+console.log('\n[19] token lifecycle (dev test flag enabled)');
 {
     const day = 86400000;
-    const fresh = JSON.stringify([{ login: 'a', token: 't1', expiresAt: Date.now() + 30 * day, addedAt: Date.now(), lastSeenAt: Date.now() }]);
-    const w = await boot('', { tw_features: JSON.stringify({ twitchAuth: true, profile: true }), tw_accounts: fresh, tw_active_login: 'a', tw_login_mode: 'account' });
+    const w = await boot('', null, { enableAuthForTest: true });
+    await w.SecureStore.ready;
+
+    w.TwitchAuth._saveAccounts([{ login: 'a', token: 't1', expiresAt: Date.now() + 30 * day, addedAt: Date.now(), lastSeenAt: Date.now() }]);
+    w.TwitchAuth.setActive('a');
     ok('fresh token kept', w.TwitchAuth.accounts().length === 1);
 
-    const expired = JSON.stringify([{ login: 'b', token: 't2', expiresAt: Date.now() - day, addedAt: Date.now() - 40 * day }]);
-    const w2 = await boot('', { tw_features: JSON.stringify({ twitchAuth: true, profile: true }), tw_accounts: expired, tw_active_login: 'b', tw_login_mode: 'account' });
-    ok('expired token purged', w2.TwitchAuth.accounts().length === 0);
-    ok('active login cleared', w2.TwitchAuth.activeAccount() === null);
+    w.TwitchAuth._saveAccounts([{ login: 'b', token: 't2', expiresAt: Date.now() - day, addedAt: Date.now() - 40 * day }]);
+    w.TwitchAuth.setActive('b');
+    ok('expired token purged', w.TwitchAuth.accounts().length === 0);
+    ok('active login cleared', w.TwitchAuth.activeAccount() === null);
 
-    const idle = JSON.stringify([{ login: 'c', token: 't3', expiresAt: Date.now() + 30 * day, addedAt: Date.now() - 5 * day, lastSeenAt: Date.now() - 3 * day }]);
-    const w3 = await boot('', { tw_features: JSON.stringify({ twitchAuth: true, profile: true }), tw_accounts: idle, tw_active_login: 'c', tw_login_mode: 'account' });
-    ok('idle token purged', w3.TwitchAuth.accounts().length === 0);
-    ok('tokenAlive respects skew', w3.Security.tokenAlive({ token: 'x', expiresAt: Date.now() + 1000 }) === false);
+    w.TwitchAuth._saveAccounts([{ login: 'c', token: 't3', expiresAt: Date.now() + 30 * day, addedAt: Date.now() - 5 * day, lastSeenAt: Date.now() - 3 * day }]);
+    w.TwitchAuth.setActive('c');
+    ok('idle token purged', w.TwitchAuth.accounts().length === 0);
+    ok('tokenAlive respects skew', w.Security.tokenAlive({ token: 'x', expiresAt: Date.now() + 1000 }) === false);
 }
 
-console.log('\n[20] OAuth callback is captured before render');
+console.log('\n[20] SecureStore keeps secrets off localStorage, encrypted in sessionStorage');
 {
-    const w = await boot('#access_token=abc123&scope=x&token_type=bearer', { tw_features: JSON.stringify({ twitchAuth: true, profile: true }) });
-    ok('token captured synchronously', w.TwitchAuth.pending === true || w.TwitchAuth.ready !== null);
-    ok('token stripped from url', w.location.hash.indexOf('access_token') === -1);
-    ok('fragment not treated as a route', w.Router.normalize('#access_token=abc') === '/');
-    const visible = Array.from(w.document.querySelectorAll('.scene')).filter(e => !e.classList.contains('hidden'));
-    ok('single visible scene during auth', visible.length === 1);
+    const w = await boot('');
+    await w.SecureStore.ready;
+    w.SecureStore.setItem('smoke_test_key', 'super-secret-value');
+    await new Promise(r => setTimeout(r, 30));
+    ok('value readable from in-memory cache', w.SecureStore.getItem('smoke_test_key') === 'super-secret-value');
+    ok('never written to localStorage', Object.keys(w.localStorage).every(k => (w.localStorage.getItem(k) || '').indexOf('super-secret-value') === -1));
+    const blob = w.sessionStorage.getItem('tw_sec_blob') || '';
+    ok('sessionStorage holds no plaintext secret', blob.indexOf('super-secret-value') === -1);
+    w.SecureStore.removeItem('smoke_test_key');
+    ok('removeItem clears the cache', w.SecureStore.getItem('smoke_test_key') === null);
 }
 
-console.log('\n[21] AI keys are not persisted by default');
+console.log('\n[21] AI keys never touch localStorage');
 {
     const w = await boot('', { cg_roast_keys: JSON.stringify({ openai: 'sk-leaked-old-key' }) });
     ok('legacy key store wiped on migrate', w.localStorage.getItem('cg_roast_keys') === null);
-    ok('schema version recorded', w.localStorage.getItem('tw_schema_v') === '3');
-    ok('persistence off by default', w.Roast.keysPersisted() === false);
+    ok('legacy persist flag wiped on migrate', w.localStorage.getItem('cg_roast_keys_persist') === null);
+    ok('schema version recorded', w.localStorage.getItem('tw_schema_v') === String(w.Security.SCHEMA));
+    await w.SecureStore.ready;
     w.Roast.config.keys.openai = 'sk-test';
     w.Roast._saveKeys(w.Roast.config.keys);
-    ok('key kept in session only', w.sessionStorage.getItem('cg_roast_keys_s') !== null);
-    ok('key not written to localStorage', w.localStorage.getItem('cg_roast_keys') === null);
+    await new Promise(r => setTimeout(r, 30));
+    ok('key kept in encrypted session store', w.SecureStore.getItem('cg_roast_keys_s') !== null);
+    ok('key never written to localStorage', Object.keys(w.localStorage).every(k => (w.localStorage.getItem(k) || '').indexOf('sk-test') === -1));
+    ok('sessionStorage blob holds no plaintext key', (w.sessionStorage.getItem('tw_sec_blob') || '').indexOf('sk-test') === -1);
     w.Roast.clearKeys();
-    ok('clearKeys wipes session', w.sessionStorage.getItem('cg_roast_keys_s') === null);
+    ok('clearKeys wipes the session store', w.SecureStore.getItem('cg_roast_keys_s') === null);
     ok('clearKeys empties config', w.Roast.config.keys.openai === '');
 }
 
-console.log('\n[22] stream-safe mode and panic wipe');
+console.log('\n[22] no stream-safe API left, panic wipe clears SecureStore too');
 {
-    const w = await boot('', { tw_features: JSON.stringify({ twitchAuth: true, profile: true }), tw_accounts: JSON.stringify([{ login: 'a', token: 't', expiresAt: Date.now() + 8.64e7, lastSeenAt: Date.now() }]) });
-    ok('off by default', w.Security.streamSafe() === false);
-    w.Security.setStreamSafe(true);
-    ok('flag persisted', w.localStorage.getItem('tw_stream_safe') === '1');
-    ok('html class applied', w.document.documentElement.classList.contains('stream-safe'));
+    const w = await boot('', null, { enableAuthForTest: true });
+    await w.SecureStore.ready;
+    w.TwitchAuth._saveAccounts([{ login: 'a', token: 't', expiresAt: Date.now() + 8.64e7, lastSeenAt: Date.now() }]);
+    w.TwitchAuth.setActive('a');
     ok('mask hides most of a key', w.Security.mask('sk-abcdefghijklmnop').indexOf('defghij') === -1);
+    ok('streamSafe API removed', typeof w.Security.streamSafe === 'undefined');
+    ok('setStreamSafe API removed', typeof w.Security.setStreamSafe === 'undefined');
     w.Security.panic();
     ok('panic clears localStorage', w.localStorage.length === 0);
     ok('panic clears sessionStorage', w.sessionStorage.length === 0);
+    ok('panic clears SecureStore cache', w.SecureStore.getItem('tw_accounts') === null);
 }
 
 console.log('\n[23] transient network errors never destroy a session');
 {
     const day = 86400000;
-    const acc = JSON.stringify([{ login: 'a', token: 't1', expiresAt: Date.now() + 30 * day, addedAt: Date.now(), lastSeenAt: Date.now() }]);
-    const w = await boot('', { tw_features: JSON.stringify({ twitchAuth: true, profile: true }), tw_accounts: acc, tw_active_login: 'a', tw_login_mode: 'account' });
+    const w = await boot('', null, { enableAuthForTest: true });
+    await w.SecureStore.ready;
+    w.TwitchAuth._saveAccounts([{ login: 'a', token: 't1', expiresAt: Date.now() + 30 * day, addedAt: Date.now(), lastSeenAt: Date.now() }]);
+    w.TwitchAuth.setActive('a');
     ok('offline keeps the account', w.TwitchAuth.accounts().length === 1);
 
     w.fetch = () => Promise.resolve({ ok: false, status: 500, json: () => Promise.resolve({}) });
@@ -392,16 +412,13 @@ console.log('\n[23] transient network errors never destroy a session');
     ok('401 drops the session', dropped === false && w.TwitchAuth.accounts().length === 0);
 }
 
-console.log('\n[24] auth kill switch');
+console.log('\n[24] auth kill switch (default build, no dev flag)');
 {
-    const day = 86400000;
-    const acc = JSON.stringify([{ login: 'a', token: 't1', expiresAt: Date.now() + 30 * day, addedAt: Date.now(), lastSeenAt: Date.now() }]);
-    const w = await boot('', { tw_accounts: acc, tw_active_login: 'a', tw_login_mode: 'account' });
+    const w = await boot('');
+    await w.SecureStore.ready;
     ok('auth off by default', w.Features.on('twitchAuth') === false);
     ok('profile forced off with auth', w.Features.on('profile') === false);
-    ok('existing tokens purged on boot', w.localStorage.getItem('tw_accounts') === null);
-    ok('active login cleared', w.localStorage.getItem('tw_active_login') === null);
-    ok('mode set to manual', w.localStorage.getItem('tw_login_mode') === 'manual');
+    ok('no override API left on Features', typeof w.Features.set === 'undefined' && typeof w.Features.reset === 'undefined');
     ok('accounts() returns nothing', w.TwitchAuth.accounts().length === 0);
     ok('activeAccount is null', w.TwitchAuth.activeAccount() === null);
     ok('html marker set', w.document.documentElement.classList.contains('no-twitchAuth'));
@@ -416,7 +433,7 @@ console.log('\n[24] auth kill switch');
 console.log('\n[25] OAuth callback ignored while auth is off');
 {
     const w = await boot('#access_token=leaked&scope=x');
-    ok('token never stored', w.localStorage.getItem('tw_accounts') === null);
+    ok('token never stored', w.SecureStore.getItem('tw_accounts') === null);
     ok('fragment stripped from url', w.location.hash.indexOf('access_token') === -1);
     ok('still lands on login', w.UI.currentSceneId === 'login');
 }
@@ -430,18 +447,15 @@ console.log('\n[26] profile route is closed while auth is off');
     ok('single visible scene', visible.length === 1);
 }
 
-console.log('\n[27] flag can be turned back on');
+console.log('\n[27] the dev test flag is the only way to enable auth');
 {
-    const w = await boot('', { tw_features: JSON.stringify({ twitchAuth: true, profile: true }) });
-    ok('override respected', w.Features.on('twitchAuth') === true);
+    const w = await boot('', null, { enableAuthForTest: true });
+    ok('flag flips DEFAULTS directly', w.Features.on('twitchAuth') === true);
     ok('profile enabled too', w.Features.on('profile') === true);
     ok('no kill-switch marker', !w.document.documentElement.classList.contains('no-twitchAuth'));
-    w.Features.set('twitchAuth', false);
-    ok('runtime toggle off works', w.Features.on('twitchAuth') === false);
-    ok('profile follows auth off', w.Features.on('profile') === false);
-    w.Features.reset();
-    ok('reset returns to defaults', w.Features.on('twitchAuth') === false);
-    ok('unknown flag rejected', w.Features.set('nope', true) === false);
+
+    const w2 = await boot('', { tw_features: JSON.stringify({ twitchAuth: true, profile: true }) });
+    ok('localStorage can no longer override the flag', w2.Features.on('twitchAuth') === false);
 }
 
 console.log('\n[28] no shadowBlur left in hot loops');
